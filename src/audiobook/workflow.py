@@ -13,13 +13,13 @@ from typing import Any, Sequence
 import numpy as np
 from tqdm import tqdm
 
-from audio_assembly import (
+from .assembly.audio import (
     assemble_chunk_audio,
     merge_chapters,
     verify_audio_dependencies,
     write_chapter_wav,
 )
-from audiobook_config import (
+from .config import (
     DEFAULT_OUTPUT_FILENAME,
     DEFAULT_PREPARED_MARKDOWN_FILENAME,
     DEFAULT_PREPARED_SCRIPT_FILENAME,
@@ -28,14 +28,14 @@ from audiobook_config import (
     TARGET_CHUNK_DURATION_SECONDS,
     VOICE_NAME,
 )
-from pdf_extraction import parse_pdf_to_chapters
-from qwen_tts_backend import (
+from .extraction.pdf import parse_pdf_to_chapters
+from .synthesis.qwen import (
     generate_chunk,
     load_qwen_model,
     verify_supported_voice,
     verify_tts_dependencies,
 )
-from semantic_chunking import NarrationChunk, build_chunk_plan, display_chunk_plan
+from .chunking.semantic import NarrationChunk, build_chunk_plan, display_chunk_plan
 
 
 @dataclass(frozen=True)
@@ -116,7 +116,7 @@ def _book_title_from_pdf(path: Path) -> str:
 
 
 def _create_preparation_provider(options: PreparationWorkflowOptions):
-    from narration_preparation import create_provider
+    from .preparation import create_provider
 
     return create_provider(
         options.provider_name,
@@ -129,7 +129,7 @@ def _create_preparation_provider(options: PreparationWorkflowOptions):
 def prepare_narration_script(options: PreparationWorkflowOptions):
     """Extract a PDF, adapt its prose, and checkpoint a prepared-book artifact."""
 
-    from narration_preparation import (
+    from .preparation import (
         NarrationPreparationPipeline,
         SourceMetadata,
         load_prepared_book,
@@ -344,7 +344,7 @@ def narrate_chapters(
 def narrate_prepared_script(options: NarrationWorkflowOptions) -> Path | None:
     """Load and validate a prepared JSON artifact before narration."""
 
-    from narration_preparation import load_prepared_book
+    from .preparation import load_prepared_book
 
     script_path = resolve_script_path(options.output_dir, options.script_path)
     book = load_prepared_book(script_path)

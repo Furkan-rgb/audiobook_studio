@@ -5,10 +5,10 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from urllib.error import URLError
 
-import make_audiobook
-from audiobook_config import DEFAULT_PREPARATION_MODEL, TTS_MODEL
-from audiobook_workflow import narration_chapters
-from narration_preparation import (
+from audiobook import cli as make_audiobook
+from audiobook.config import DEFAULT_PREPARATION_MODEL, TTS_MODEL
+from audiobook.workflow import narration_chapters
+from audiobook.preparation import (
     ArtifactValidationError,
     DEFAULT_PROMPT_VERSION,
     NarrationPreparationPipeline,
@@ -32,8 +32,8 @@ from narration_preparation import (
     segment_text,
     validate_preparation,
 )
-from narration_preparation.providers.ollama import DEFAULT_OLLAMA_MODEL
-from semantic_chunking import build_chunk_plan
+from audiobook.preparation.providers.ollama import DEFAULT_OLLAMA_MODEL
+from audiobook.chunking.semantic import build_chunk_plan
 
 
 PREFACE_SOURCE = """The psychotherapy of male homosexuals has been explored for many years. What is new
@@ -452,7 +452,7 @@ class OllamaProviderTests(unittest.TestCase):
         )
 
         with patch(
-            "narration_preparation.providers.ollama.urlopen",
+            "audiobook.preparation.providers.ollama.urlopen",
             side_effect=fake_urlopen,
         ):
             result = provider.prepare(request)
@@ -480,7 +480,7 @@ class OllamaProviderTests(unittest.TestCase):
         )
 
         with patch(
-            "narration_preparation.providers.ollama.urlopen",
+            "audiobook.preparation.providers.ollama.urlopen",
             return_value=FakeHTTPResponse(b"{not-json"),
         ):
             with self.assertRaisesRegex(ProviderResponseError, "malformed JSON"):
@@ -490,7 +490,7 @@ class OllamaProviderTests(unittest.TestCase):
             {"message": {"content": "not structured json"}}
         ).encode("utf-8")
         with patch(
-            "narration_preparation.providers.ollama.urlopen",
+            "audiobook.preparation.providers.ollama.urlopen",
             return_value=FakeHTTPResponse(outer),
         ):
             with self.assertRaisesRegex(ProviderResponseError, "JSON output contract"):
@@ -505,14 +505,14 @@ class OllamaProviderTests(unittest.TestCase):
         error_body = json.dumps({"error": "model runner failed"}).encode("utf-8")
 
         with patch(
-            "narration_preparation.providers.ollama.urlopen",
+            "audiobook.preparation.providers.ollama.urlopen",
             return_value=FakeHTTPResponse(error_body),
         ):
             with self.assertRaisesRegex(ProviderResponseError, "model runner failed"):
                 provider.prepare(request)
 
         with patch(
-            "narration_preparation.providers.ollama.urlopen",
+            "audiobook.preparation.providers.ollama.urlopen",
             side_effect=URLError("connection refused"),
         ):
             with self.assertRaisesRegex(ProviderUnavailableError, "ollama serve"):
@@ -539,9 +539,9 @@ class CommandLineTests(unittest.TestCase):
         args = make_audiobook.parse_args([])
 
         self.assertEqual(args.command, "all")
-        self.assertEqual(DEFAULT_PREPARATION_MODEL, "gemma4:31b")
-        self.assertEqual(DEFAULT_OLLAMA_MODEL, "gemma4:31b")
-        self.assertEqual(args.preparation_model, "gemma4:31b")
+        self.assertEqual(DEFAULT_PREPARATION_MODEL, "gemma4:12b")
+        self.assertEqual(DEFAULT_OLLAMA_MODEL, "gemma4:12b")
+        self.assertEqual(args.preparation_model, "gemma4:12b")
         self.assertIn("Qwen3-TTS", args.tts_model)
         self.assertNotEqual(args.preparation_model, args.tts_model)
         self.assertIn("Qwen3-TTS", TTS_MODEL)

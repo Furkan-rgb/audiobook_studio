@@ -11,7 +11,7 @@ from typing import Protocol, Sequence
 import numpy as np
 import soundfile as sf
 
-from audiobook_config import (
+from ..config import (
     CHAPTER_SILENCE_MS,
     CHUNK_CROSSFADE_MS,
     PARAGRAPH_SILENCE_MS,

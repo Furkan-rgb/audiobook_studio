@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Sequence
 
-from audiobook_config import (
+from ..config import (
     CONTEXT_CHARS,
     MAX_CHUNK_CHARS,
     MIN_CHUNK_CHARS,

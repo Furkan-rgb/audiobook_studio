@@ -11,7 +11,7 @@ generation:
 ```text
 PDF extraction
     → deterministic text normalization
-    → provider-neutral narration preparation
+    → provider-neutral listening adaptation
     → validated, reviewable prepared script
     → semantic narration chunks
     → Qwen3-TTS
@@ -26,7 +26,13 @@ punctuation, broken line wrapping, and extraction artifacts. The preparation
 stage adapts those presentation details for listening while preserving the
 author's substantive prose.
 
-The default provider is local Ollama with `gemma4:31b`. Its policy explicitly
+The model-assisted operation is called **listening adaptation**; together with
+deterministic normalization and validation it forms the broader narration
+preparation stage. Gemma receives grouped prose units rather than isolated
+paragraphs. Paragraph boundaries remain intact, headings and scene markers
+bypass the model, and neighboring prose is supplied only as non-output context.
+
+The default provider is local Ollama with `gemma4:12b`. Its policy explicitly
 forbids summarizing, censoring, softening, editorializing, modernizing, or adding
 transitions. Structured responses contain:
 
@@ -59,7 +65,7 @@ Create the environment and download the TTS model from Hugging Face:
 
 ```bash
 python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -e .
 .venv/bin/hf download Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice \
   --local-dir models/Qwen3-TTS-12Hz-1.7B-CustomVoice
 ```
@@ -68,7 +74,7 @@ Start Ollama and install the default preparation model:
 
 ```bash
 ollama serve
-ollama pull gemma4:31b
+ollama pull gemma4:12b
 ```
 
 The provider is configurable, so another installed Ollama model can be selected
@@ -76,12 +82,48 @@ with `--preparation-model`. Future hosted adapters implement the same
 `NarrationPreparationProvider` interface; extraction, validation, artifacts,
 chunking, and TTS do not depend on Ollama response types.
 
+## Preparation-model benchmark
+
+The manually reviewed results that informed the current 12B default are
+recorded in
+[`docs/preparation-model-benchmarks.md`](docs/preparation-model-benchmarks.md).
+
+Compare the default Gemma variants on exactly the same normalized prose unit:
+
+```bash
+.venv/bin/audiobook benchmark \
+  --pdf book.pdf \
+  --models gemma4:12b gemma4:26b gemma4:31b \
+  --preview-chapters 1 \
+  --preview-units 1
+```
+
+Every model and repetition runs without preparation-cache reuse and is unloaded
+afterward. The benchmark writes a timestamped directory under
+`output/benchmarks/` containing:
+
+- `comparison.md`, the human-review report;
+- `benchmark.json`, machine-readable metrics and configuration;
+- isolated `prepared_book.md` and `prepared_book.json` artifacts for every run.
+
+Reported indicators include wall and provider time, lexical retention, minimum
+unit retention, source similarity, similarity to a citation-stripped listening
+target, citation-shaped character reduction,
+paragraph-boundary preservation, edits, warnings, cross-model similarity, and
+repeat consistency. These indicators catch obvious failures but do not replace
+human review of names, dates, quotations, qualifications, and intended citation
+removals.
+
+Use `--repetitions 3` when measuring consistency or timing. Any future model
+identifier can be supplied through `--models`; future provider adapters use the
+same command with `--provider` and the provider-specific model identifiers.
+
 ## Recommended workflow
 
 First prepare a small sample from the opening chapter:
 
 ```bash
-.venv/bin/python make_audiobook.py prepare \
+.venv/bin/audiobook prepare \
   --pdf book.pdf \
   --preview-chapters 1 \
   --preview-units 1
@@ -97,7 +139,7 @@ output/prepared_book.json
 Inspect the semantic TTS plan without loading Qwen:
 
 ```bash
-.venv/bin/python make_audiobook.py narrate \
+.venv/bin/audiobook narrate \
   --script output/prepared_book.json \
   --dry-run
 ```
@@ -105,7 +147,7 @@ Inspect the semantic TTS plan without loading Qwen:
 Generate a one-chunk audio preview:
 
 ```bash
-.venv/bin/python make_audiobook.py narrate \
+.venv/bin/audiobook narrate \
   --script output/prepared_book.json \
   --preview-chunks 1
 ```
@@ -113,8 +155,8 @@ Generate a one-chunk audio preview:
 When the sample is satisfactory, prepare the complete book and then narrate it:
 
 ```bash
-.venv/bin/python make_audiobook.py prepare --pdf book.pdf
-.venv/bin/python make_audiobook.py narrate
+.venv/bin/audiobook prepare --pdf book.pdf
+.venv/bin/audiobook narrate
 ```
 
 Preparation resumes from compatible units in the existing JSON artifact. Use
@@ -126,19 +168,20 @@ Preparation resumes from compatible units in the existing JSON artifact. Use
 Qwen3-TTS is loaded so the two models do not compete for GPU memory.
 
 ```bash
-.venv/bin/python make_audiobook.py all --pdf book.pdf
+.venv/bin/audiobook all --pdf book.pdf
 ```
 
 For a fast end-to-end preview:
 
 ```bash
-.venv/bin/python make_audiobook.py all \
+.venv/bin/audiobook all \
   --pdf book.pdf \
   --preview-units 1 \
   --preview-chunks 1
 ```
 
-The original option-only form remains compatible and is treated as `all`:
+The original launcher and option-only form remain compatible and are treated
+as `all`:
 
 ```bash
 .venv/bin/python make_audiobook.py --pdf book.pdf
@@ -162,26 +205,42 @@ boundary-sensitive gaps.
 ## Modules
 
 ```text
-make_audiobook.py                 # CLI only
-audiobook_config.py               # shared defaults
-audiobook_workflow.py             # prepare/narrate orchestration
-pdf_extraction.py                 # PDF bookmarks and extraction cleanup
-narration_preparation/
-├── normalization.py              # deterministic, idempotent cleanup
-├── segmentation.py               # provider-sized prose units and context
-├── prompting.py                  # provider-neutral policy and JSON schema
-├── validation.py                 # preservation safeguards
-├── artifacts.py                  # hashes, validation, atomic persistence
-├── pipeline.py                   # cache, resume, and checkpoints
-└── providers/
-    ├── base.py                   # provider protocol and shared errors
-    └── ollama.py                 # local Ollama adapter
-semantic_chunking.py              # coherent TTS request construction
-qwen_tts_backend.py               # Qwen3-TTS/Aiden inference
-audio_assembly.py                 # crossfades, chapter WAVs, and M4B output
+src/audiobook/
+├── cli.py                        # command-line interface
+├── config.py                     # shared defaults
+├── workflow.py                   # prepare/narrate orchestration
+├── benchmarking/
+│   └── preparation.py            # model timing, quality metrics, reports
+├── extraction/
+│   └── pdf.py                    # PDF bookmarks and extraction cleanup
+├── preparation/
+│   ├── normalization.py          # deterministic, idempotent cleanup
+│   ├── segmentation.py           # provider-sized prose units and context
+│   ├── prompting.py              # provider-neutral policy and JSON schema
+│   ├── validation.py             # preservation safeguards
+│   ├── artifacts.py              # hashes and atomic persistence
+│   ├── pipeline.py               # cache, resume, and checkpoints
+│   └── providers/
+│       ├── base.py               # provider protocol and shared errors
+│       ├── registry.py           # provider-neutral construction
+│       └── ollama.py             # local Ollama adapter
+├── chunking/
+│   └── semantic.py               # coherent TTS request construction
+├── synthesis/
+│   └── qwen.py                   # Qwen3-TTS/Aiden inference
+└── assembly/
+    └── audio.py                  # crossfades, WAVs, and M4B output
+
+make_audiobook.py                 # legacy compatibility launcher
 sample/qwen_tts_sample.py         # short voice sample generator
-tests/                            # unit and workflow tests
+tests/                            # focused module and workflow tests
 ```
+
+Each domain package has a narrow API and can be tested without running later
+stages. The preparation preview exercises extraction, normalization, listening
+adaptation, validation, and artifact persistence. `narrate --dry-run` exercises
+artifact loading and semantic chunking without loading Qwen, while
+`--preview-chunks 1` isolates a single synthesis request and its audio output.
 
 ## Verification
 
@@ -190,6 +249,8 @@ Run the complete offline test suite with:
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
 ```
+
+The installed CLI can also be invoked as `.venv/bin/python -m audiobook`.
 
 The virtual environment, downloaded models, input PDFs, generated audio,
 prepared scripts, and voice-sample WAV files are ignored by Git.

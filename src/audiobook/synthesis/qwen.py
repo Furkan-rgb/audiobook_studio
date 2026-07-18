@@ -11,7 +11,7 @@ from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 
-from audiobook_config import LANGUAGE, NARRATION_INSTRUCTION, VOICE_NAME
+from ..config import LANGUAGE, NARRATION_INSTRUCTION, VOICE_NAME
 
 
 @runtime_checkable

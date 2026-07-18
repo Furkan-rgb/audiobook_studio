@@ -21,7 +21,7 @@ from .base import ProviderResponseError, ProviderUnavailableError
 
 
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-DEFAULT_OLLAMA_MODEL = "gemma4:31b"
+DEFAULT_OLLAMA_MODEL = "gemma4:12b"
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
 
 

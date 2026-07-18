@@ -7,7 +7,7 @@ import soundfile as sf
 import torch
 from qwen_tts import Qwen3TTSModel
 
-from audiobook_config import (
+from audiobook.config import (
     LOCAL_TTS_MODEL_PATH,
     NARRATION_INSTRUCTION,
     TTS_MODEL,

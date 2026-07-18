@@ -6,3 +6,6 @@ sample/voice_samples/
 *.onnx
 *.pdf
 __pycache__/
+build/
+dist/
+*.egg-info/
