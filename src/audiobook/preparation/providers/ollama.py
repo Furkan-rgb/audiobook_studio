@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import socket
-from typing import Any
+from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -23,6 +23,47 @@ from .base import ProviderDescriptor, ProviderResponseError, ProviderUnavailable
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_OLLAMA_MODEL = "gemma4:12b"
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
+# A pull moves several gigabytes over the network; the ceiling exists to catch a
+# wedged server, not to bound a slow download.
+DEFAULT_PULL_TIMEOUT_SECONDS = 3600.0
+
+PullProgress = Callable[[str], None]
+
+
+def _default_pull_progress(message: str) -> None:
+    print(message, flush=True)
+
+
+def _format_size(num_bytes: int) -> str:
+    """Bytes at a scale that stays readable for both a manifest and a 12 GB blob."""
+
+    kb = num_bytes / 1024
+    if kb < 1024:
+        return f"{kb:.0f} KB"
+    mb = kb / 1024
+    if mb < 1000:
+        return f"{mb:.0f} MB"
+    return f"{mb / 1024:.1f} GB"
+
+
+def _format_pull_event(model: str, event: dict[str, Any]) -> str:
+    """One human-readable progress line, or "" for an event worth skipping.
+
+    Progress is a percentage in steps of five against a fixed total, not a
+    running byte count.  Caller-side deduplication is by line, and a counter
+    that moves every event would defeat it: a single layer would emit hundreds
+    of near-identical lines, readable while scrolling past but useless in a log.
+    """
+
+    status = event.get("status")
+    if not isinstance(status, str) or not status:
+        return ""
+    total = event.get("total")
+    completed = event.get("completed")
+    if isinstance(total, int) and isinstance(completed, int) and total > 0:
+        percent = min(100, int(completed * 100 / total)) // 5 * 5
+        return f"  pulling {model}: {status} {percent}% of {_format_size(total)}"
+    return f"  pulling {model}: {status}"
 
 
 def _configured() -> dict[str, Any]:
@@ -70,11 +111,16 @@ class OllamaProvider:
         keep_alive: str | int = "10m",
         unload_on_close: bool = True,
         prompt_version: str = DEFAULT_PROMPT_VERSION,
+        auto_pull: bool = True,
+        pull_timeout: float = DEFAULT_PULL_TIMEOUT_SECONDS,
+        on_pull_progress: PullProgress | None = None,
     ) -> None:
         if not model.strip():
             raise ValueError("Ollama model cannot be blank")
         if timeout <= 0:
             raise ValueError("Ollama timeout must be positive")
+        if pull_timeout <= 0:
+            raise ValueError("Ollama pull timeout must be positive")
         if num_ctx <= 0 or num_predict <= 0:
             raise ValueError("Ollama context and output limits must be positive")
         parsed = urlparse(base_url)
@@ -90,6 +136,9 @@ class OllamaProvider:
         self.keep_alive = keep_alive
         self.unload_on_close = unload_on_close
         self.prompt_version = prompt_version
+        self.auto_pull = auto_pull
+        self.pull_timeout = pull_timeout
+        self.on_pull_progress = on_pull_progress or _default_pull_progress
         self._closed = False
         self._used = False
 
@@ -165,7 +214,7 @@ class OllamaProvider:
             aliases.add(name + ":latest")
         return aliases
 
-    def check_available(self) -> None:
+    def _model_installed(self) -> bool:
         response = self._request_json("GET", "/api/tags", timeout=min(self.timeout, 15.0))
         models = response.get("models")
         if not isinstance(models, list):
@@ -176,10 +225,85 @@ class OllamaProvider:
                 for key in ("name", "model"):
                     if isinstance(item.get(key), str):
                         installed.update(self._model_aliases(item[key]))
-        if not (self._model_aliases(self.model) & installed):
+        return bool(self._model_aliases(self.model) & installed)
+
+    def pull(self) -> None:
+        """Fetch the model into the running server, reporting progress.
+
+        ``/api/pull`` streams newline-delimited status objects rather than a
+        single document, so this cannot go through :meth:`_request_json`: the
+        point is to report progress while the bytes arrive, not after.
+        """
+
+        body = json.dumps({"model": self.model, "stream": True}).encode("utf-8")
+        request = Request(
+            self.base_url + "/api/pull",
+            data=body,
+            headers={"Accept": "application/x-ndjson", "Content-Type": "application/json"},
+            method="POST",
+        )
+        last_line = ""
+        try:
+            with urlopen(request, timeout=self.pull_timeout) as response:
+                for raw in response:
+                    line = raw.strip()
+                    if not line:
+                        continue
+                    try:
+                        event = json.loads(line.decode("utf-8"))
+                    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                        raise ProviderResponseError(
+                            "Ollama /api/pull returned malformed JSON"
+                        ) from exc
+                    if not isinstance(event, dict):
+                        raise ProviderResponseError(
+                            "Ollama /api/pull events must be JSON objects"
+                        )
+                    if event.get("error"):
+                        raise ProviderResponseError(
+                            f"Ollama could not pull {self.model!r}: {event['error']}"
+                        )
+                    message = _format_pull_event(self.model, event)
+                    if message and message != last_line:
+                        self.on_pull_progress(message)
+                        last_line = message
+        except HTTPError as exc:
+            detail = exc.read(4096).decode("utf-8", errors="replace").strip()
+            raise ProviderResponseError(
+                f"Ollama returned HTTP {exc.code} pulling {self.model!r}: "
+                f"{detail or exc.reason}"
+            ) from exc
+        except (URLError, TimeoutError, socket.timeout, ConnectionError) as exc:
+            raise ProviderUnavailableError(
+                f"The pull of {self.model!r} from Ollama at {self.base_url} did "
+                f"not complete. Retry, or run `ollama pull {self.model}` "
+                f"manually. Details: {exc}"
+            ) from exc
+
+    def check_available(self) -> None:
+        """Ensure the server answers and the model is there, pulling if not.
+
+        A missing model is the one dependency this project can resolve on its
+        own — the server is up and ``/api/pull`` is a single call — so it is
+        fetched rather than reported, unless ``auto_pull`` says otherwise.
+        """
+
+        if self._model_installed():
+            return
+        if not self.auto_pull:
             raise ProviderUnavailableError(
                 f"Ollama is running, but model {self.model!r} is not installed. "
                 f"Run: ollama pull {self.model}"
+            )
+        self.on_pull_progress(
+            f"  {self.model} is not installed; pulling it from the Ollama library."
+        )
+        self.pull()
+        if not self._model_installed():
+            raise ProviderUnavailableError(
+                f"Ollama reported the pull of {self.model!r} as finished, but the "
+                "model is still not installed. Check the name against "
+                "`ollama list` and the Ollama library."
             )
 
     def prepare(self, request: PreparationRequest) -> PreparationResult:

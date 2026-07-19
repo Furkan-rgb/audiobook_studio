@@ -1,7 +1,7 @@
-# Modular audiobook workflow
+# Audiobook Studio
 
-Convert a PDF into a prepared narration script, review it, and then generate a
-chaptered `.m4b` audiobook with Qwen3-TTS. The narrator can be a built-in
+Convert a book — PDF or EPUB — into a prepared narration script, review it, and
+then generate a chaptered `.m4b` audiobook with Qwen3-TTS. The narrator can be a built-in
 speaker or a bespoke voice you design yourself (see
 [Custom narrator voice](#custom-narrator-voice)); runs default to the
 designed `warm_male` voice.
@@ -10,7 +10,7 @@ The workflow deliberately separates editorial preparation from speech
 generation:
 
 ```text
-PDF extraction
+book extraction (PDF bookmarks or EPUB navigation)
     → deterministic text normalization
     → provider-neutral listening adaptation
     → validated, reviewable prepared script
@@ -18,6 +18,23 @@ PDF extraction
     → Qwen3-TTS
     → chaptered M4B
 ```
+
+## Book extraction
+
+The backend is chosen from the file extension, and both produce the same thing:
+a list of chapters with their narratable text.
+
+- **PDF** — chapters come from numbered bookmarks, aligned against the headings
+  actually printed on the page, with page numbers, figure captions, and layout
+  hyphenation removed.
+- **EPUB** — chapters come from the book's own navigation map (EPUB 3 `nav` or
+  EPUB 2 NCX) and spine order, so a boundary lands exactly where the author put
+  it, including several chapters inside one file split at their anchors. Front
+  matter a reader shows out of band (`linear="no"`), tables of contents, and
+  Project Gutenberg licence text are not narrated. No extra dependency: an EPUB
+  is a ZIP of XML, and the parser is stdlib.
+
+`--book` accepts either; `--pdf` remains as an alias.
 
 ## Browser frontend
 
@@ -29,7 +46,7 @@ python run_ui.py            # http://127.0.0.1:7860
 ```
 
 Four tabs matching the stages — **Voices** (design, import a recording, edit a
-transcript, audition), **Book** (extract and adapt a PDF, read the result),
+transcript, audition), **Book** (extract and adapt a PDF or EPUB, read the result),
 **Narrate** (preview chunks or render the full M4B) and **Library**. They share
 no state beyond the files on disk, so each works on its own and anything made
 here is usable from the CLI.
@@ -90,15 +107,19 @@ python3.12 -m venv .venv
   --local-dir models/Qwen3-TTS-12Hz-1.7B-CustomVoice
 ```
 
-Start Ollama and install the default preparation model:
+Start Ollama:
 
 ```bash
 ollama serve
-ollama pull gemma4:12b
 ```
 
-The provider is configurable, so another installed Ollama model can be selected
-with `--preparation-model`. Future hosted adapters implement the same
+The preparation model is pulled automatically: preflight checks whether it is
+installed and, if not, fetches it before extraction starts. Pre-pulling it with
+`ollama pull gemma4:12b` only moves the same download earlier. What is not
+installed for you is Ollama itself — the server has to be reachable.
+
+The provider is configurable, so another Ollama model can be selected with
+`--preparation-model`; it is pulled on first use the same way. Future hosted adapters implement the same
 `NarrationPreparationProvider` interface; extraction, validation, artifacts,
 chunking, and TTS do not depend on Ollama response types.
 
@@ -112,7 +133,7 @@ Compare the default Gemma variants on exactly the same normalized prose unit:
 
 ```bash
 .venv/bin/audiobook benchmark \
-  --pdf book.pdf \
+  --book book.epub \
   --models gemma4:12b gemma4:26b gemma4:31b \
   --preview-chapters 1 \
   --preview-units 1
@@ -144,7 +165,7 @@ First prepare a small sample from the opening chapter:
 
 ```bash
 .venv/bin/audiobook prepare \
-  --pdf book.pdf \
+  --book book.epub \
   --preview-chapters 1 \
   --preview-units 1
 ```
@@ -175,7 +196,7 @@ Generate a one-chunk audio preview:
 When the sample is satisfactory, prepare the complete book and then narrate it:
 
 ```bash
-.venv/bin/audiobook prepare --pdf book.pdf
+.venv/bin/audiobook prepare --book book.epub
 .venv/bin/audiobook narrate
 ```
 
@@ -188,23 +209,22 @@ Preparation resumes from compatible units in the existing JSON artifact. Use
 Qwen3-TTS is loaded so the two models do not compete for GPU memory.
 
 ```bash
-.venv/bin/audiobook all --pdf book.pdf
+.venv/bin/audiobook all --book book.epub
 ```
 
 For a fast end-to-end preview:
 
 ```bash
 .venv/bin/audiobook all \
-  --pdf book.pdf \
+  --book book.epub \
   --preview-units 1 \
   --preview-chunks 1
 ```
 
-The original launcher and option-only form remain compatible and are treated
-as `all`:
+The option-only form (no subcommand) is also accepted and treated as `all`:
 
 ```bash
-.venv/bin/python make_audiobook.py --pdf book.pdf
+.venv/bin/audiobook --book book.epub
 ```
 
 ## Custom narrator voice
@@ -241,7 +261,7 @@ automatically on first use or can be fetched with `hf download`.
 
 Prepared text follows this hierarchy:
 
-1. PDF bookmark chapters
+1. Chapters, from PDF bookmarks or the EPUB navigation map
 2. Scene or section boundaries
 3. Complete paragraphs and related dialogue exchanges
 4. Sentences, only when an oversized paragraph must be split
@@ -266,7 +286,10 @@ src/audiobook/
 ├── benchmarking/
 │   └── preparation.py            # model timing, quality metrics, reports
 ├── extraction/
-│   └── pdf.py                    # PDF bookmarks and extraction cleanup
+│   ├── __init__.py               # backend chosen by file extension
+│   ├── text.py                   # cleanup shared by every backend
+│   ├── pdf.py                    # PDF bookmarks and page-boundary joining
+│   └── epub.py                   # EPUB spine, navigation map, and anchors
 ├── preparation/
 │   ├── normalization.py          # deterministic, idempotent cleanup
 │   ├── segmentation.py           # provider-sized prose units and context
@@ -288,7 +311,6 @@ src/audiobook/
 design_voice.py                   # design a narrator voice from a description
 clone_voice.py                    # preview a designed voice on sample text
 voices/<name>/                    # reference.wav + reference.json per voice
-make_audiobook.py                 # legacy compatibility launcher
 sample/qwen_tts_sample.py         # short built-in-speaker sample generator
 tests/                            # focused module and workflow tests
 ```

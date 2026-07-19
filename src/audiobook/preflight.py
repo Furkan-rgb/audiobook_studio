@@ -7,7 +7,9 @@ before.  This module asks the same questions before any work starts, reading
 the answers from the same config the stages will use.
 
 Checks are ordered from environment to configuration, and none of them loads a
-model or decodes audio: preflight must cost seconds, not minutes.
+model or decodes audio: preflight must cost seconds, not minutes.  The single
+exception is a missing Ollama model, which is pulled here — waiting for that
+download before extraction beats discovering it afterwards.
 """
 
 from __future__ import annotations
@@ -174,6 +176,9 @@ def _check_preparation_provider(
 
     For Ollama this confirms both that the server answers and that the model
     is pulled — the two ways a prepare run dies after extraction already ran.
+    A model that is merely missing is fetched here rather than reported: this
+    is the earliest point at which the download can happen, and it is the one
+    unmet dependency the project can satisfy without the user.
     """
 
     from .preparation import create_provider, provider_descriptor
@@ -199,8 +204,20 @@ def _check_preparation_provider(
     missing = descriptor.missing_requirement()
     if missing:
         return CheckResult(name, FAIL, missing)
+    pulled: list[str] = []
+
+    def on_pull_progress(message: str) -> None:
+        pulled.append(message)
+        print(message, flush=True)
+
+    settings = {"model": model, "base_url": base_url, "timeout": 15.0}
     try:
-        instance = create_provider(provider, model=model, base_url=base_url, timeout=15.0)
+        # Only a local adapter installs models; a hosted one has no such knob,
+        # so the callback is offered rather than required.
+        try:
+            instance = create_provider(provider, **settings, on_pull_progress=on_pull_progress)
+        except TypeError:
+            instance = create_provider(provider, **settings)
     except ValueError as exc:
         return CheckResult(name, FAIL, str(exc))
     try:
@@ -209,6 +226,8 @@ def _check_preparation_provider(
         return CheckResult(name, FAIL, str(exc))
     finally:
         instance.close()
+    if pulled:
+        return CheckResult(name, WARN, f"{base_url} — pulled {model} on this run")
     return CheckResult(name, OK, base_url)
 
 

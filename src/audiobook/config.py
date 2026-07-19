@@ -3,8 +3,11 @@
 from pathlib import Path
 
 
-# Book and artifact locations
-DEFAULT_PDF_PATH = Path("book.pdf")
+# Book and artifact locations.  The source may be any format the extraction
+# backends support (PDF or EPUB); the default is only what the CLI and UI
+# preselect when a file sits beside the project.
+DEFAULT_BOOK_PATH = Path("book.pdf")
+DEFAULT_PDF_PATH = DEFAULT_BOOK_PATH  # Retained for scripts using the old name.
 DEFAULT_OUTPUT_DIR = Path("output")
 DEFAULT_OUTPUT_FILENAME = "audiobook.m4b"
 DEFAULT_PREVIEW_OUTPUT_FILENAME = "audiobook_preview.m4b"
@@ -13,9 +16,10 @@ DEFAULT_PREPARED_MARKDOWN_FILENAME = "prepared_book.md"
 
 # Narration preparation.  Each provider adapter reads its own entry here to
 # build the menu the frontend offers, so adding a model is a config edit rather
-# than a code change.  Keep the lists to models you can actually reach: a model
-# that is missing (not pulled, or not on your plan) only fails once extraction
-# has already run.  API keys are never stored here — an adapter names the
+# than a code change.  Keep the lists to models you can actually reach: a local
+# model that is not pulled yet is fetched automatically at preflight, but one
+# that is not on your plan (or misspelled) only fails once extraction has
+# already run.  API keys are never stored here — an adapter names the
 # environment variable it reads, and the value stays in your shell.
 PREPARATION_PROVIDERS = {
     "ollama": {

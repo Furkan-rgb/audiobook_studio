@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-import make_audiobook as audiobook
+from audiobook import cli as audiobook
 
 
 class SemanticChunkingTests(unittest.TestCase):

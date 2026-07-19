@@ -1,4 +1,4 @@
-"""Extract chapter-oriented narration text from PDF and Markdown input.
+"""Extract chapter-oriented narration text from PDF input.
 
 This module owns the deterministic cleanup that happens before any optional
 model-assisted narration adaptation.  It deliberately preserves paragraph and
@@ -12,39 +12,28 @@ import re
 from pathlib import Path
 from typing import Sequence
 
-
-RE_BOLD = re.compile(r"\*{1,2}([^*]+)\*{1,2}")
-RE_CODE = re.compile(r"`([^`]+)`")
-RE_LINKS = re.compile(r"\[([^\]]+)\]\([^)]+\)")
-RE_IMGS = re.compile(r"!\[([^\]]*)\]\([^)]+\)")
-RE_HYPHENS = re.compile(r"\s*-\s*\n\s*")
-RE_PAGENUMS = re.compile(r"(\d+)\s*\n\s*(?=\S)")
-RE_NEWLINES = re.compile(r"\n{3,}")
-RE_WHITESPACE = re.compile(r"[ \t]+")
-RE_FIGS = re.compile(r"\b(fig\.|figure|table)\s*\d+[.:]*", re.IGNORECASE)
-RE_CITATIONS_PAREN = re.compile(r"\(\s*\d+\s*\)")
-RE_CITATIONS_BRACKET = re.compile(r"\[\s*\d+\s*\]")
-RE_NUMBERED_CHAPTER = re.compile(r"^\s*\d+\s+\S")
-RE_PART_BOOKMARK = re.compile(r"^\s*[IVXLCDM]+\s+\S", re.IGNORECASE)
-RE_STANDALONE_PAGE_NUMBER = re.compile(
-    r"(?m)^[ \t]*#{0,6}[ \t]*(?:\d[ \t]*)+[ \t]*$"
+from .text import (
+    RE_BOLD,
+    RE_CITATIONS_BRACKET,
+    RE_CITATIONS_PAREN,
+    RE_CODE,
+    RE_FIGS,
+    RE_HYPHENS,
+    RE_IMGS,
+    RE_LINKS,
+    RE_NEWLINES,
+    RE_NUMBERED_CHAPTER,
+    RE_PAGENUMS,
+    RE_PART_BOOKMARK,
+    RE_STANDALONE_PAGE_NUMBER,
+    RE_WHITESPACE,
+    clean_text_segment,
+    has_narratable_body,
+    is_skipped_section,
 )
 
 
-def clean_text_segment(text: str) -> str:
-    """Remove PDF and Markdown noise while preserving paragraph boundaries."""
-    text = RE_IMGS.sub("", text)
-    text = RE_LINKS.sub(r"\1", text)
-    text = RE_BOLD.sub(r"\1", text)
-    text = RE_CODE.sub(r"\1", text)
-    text = RE_HYPHENS.sub("", text)
-    text = RE_PAGENUMS.sub(r"\1 ", text)
-    text = RE_FIGS.sub("", text)
-    text = RE_CITATIONS_PAREN.sub("", text)
-    text = RE_CITATIONS_BRACKET.sub("", text)
-    text = RE_NEWLINES.sub("\n\n", text)
-    text = RE_WHITESPACE.sub(" ", text)
-    return text.strip()
+RE_MARKDOWN_HEADING = re.compile(r"(?m)^(#{1,6})[ \t]+(\S.*?)[ \t]*$")
 
 
 def _join_markdown_pages(page_texts: Sequence[str]) -> str:
@@ -73,12 +62,98 @@ def _join_markdown_pages(page_texts: Sequence[str]) -> str:
     return result
 
 
+def _select_bookmarks(
+    outline: Sequence[tuple[int, str, int]],
+) -> tuple[list[tuple[str, int]], list[tuple[str, int]], str]:
+    """Choose which outline entries start chapters, and which merely end them.
+
+    Numbered entries are the strongest signal a PDF gives: they name chapters
+    and nothing else, and roman-numbered parts around them are boundaries
+    without being narrated.  Plenty of books number nothing, though, so when no
+    entry looks numbered the outline's shallowest level is used instead — that
+    is the level a table of contents prints — with apparatus filtered out by
+    title.  Returns the chapter starts, the boundaries, and a label for logging.
+    """
+
+    numbered: list[tuple[str, int]] = []
+    structural: list[tuple[str, int]] = []
+    entries: list[tuple[int, str, int]] = []
+    for level, raw_title, page_number in outline:
+        title = " ".join(raw_title.split())
+        if not title or page_number < 1:
+            continue
+        entries.append((level, title, page_number))
+        if RE_NUMBERED_CHAPTER.match(title):
+            numbered.append((title, page_number))
+            structural.append((title, page_number))
+        elif RE_PART_BOOKMARK.match(title):
+            structural.append((title, page_number))
+    if numbered:
+        return numbered, structural, "bookmarks"
+
+    if entries:
+        top_level = min(level for level, _title, _page in entries)
+        top_entries = [
+            (title, page_number)
+            for level, title, page_number in entries
+            if level == top_level
+        ]
+        # A single top-level entry describes the book, not its chapters; drop
+        # to the heading fallback rather than narrate the whole PDF as "Cover".
+        if len(top_entries) > 1:
+            narrated = [
+                (title, page_number)
+                for title, page_number in top_entries
+                if not is_skipped_section(title)
+            ]
+            # Skipped sections still bound the chapter before them.
+            return narrated, top_entries, "outline"
+    return [], [], "none"
+
+
+def _split_markdown_headings(markdown: str) -> list[tuple[str, str]]:
+    """Split unbookmarked page text on its shallowest Markdown heading level.
+
+    ``pymupdf4llm`` promotes visually larger type to headings, so a PDF with no
+    outline at all usually still marks its chapter openers.  Anything short of
+    two headings at the same level is not structure worth trusting.
+    """
+
+    headings = list(RE_MARKDOWN_HEADING.finditer(markdown))
+    if not headings:
+        return []
+    top_level = min(len(match.group(1)) for match in headings)
+    starts = [match for match in headings if len(match.group(1)) == top_level]
+    if len(starts) < 2:
+        return []
+
+    chapters: list[tuple[str, str]] = []
+    for index, match in enumerate(starts):
+        end = starts[index + 1].start() if index + 1 < len(starts) else len(markdown)
+        # A heading inferred from large type often carries emphasis markers that
+        # belong to the page, not to the chapter's name.
+        title = RE_BOLD.sub(r"\1", RE_CODE.sub(r"\1", match.group(2)))
+        title = " ".join(RE_LINKS.sub(r"\1", RE_IMGS.sub("", title)).split())
+        if not title or is_skipped_section(title):
+            continue
+        content = clean_text_segment(markdown[match.start() : end])
+        if not has_narratable_body(content):
+            continue
+        chapters.append((title, content))
+    return chapters
+
+
 def parse_pdf_to_chapters(pdf_path: Path) -> list[tuple[str, str]]:
     """Parse a PDF into chapters using bookmarks instead of numbered body text.
 
     Embedded bookmark page hints are aligned with nearby visible headings,
     structural part bookmarks delimit content without being narrated, and
     common unbookmarked front-matter sections are included when present.
+
+    Structure is taken from the best source the file actually offers, in order:
+    numbered chapter bookmarks, the outline's shallowest level, the headings
+    ``pymupdf4llm`` infers from the page text, and finally one whole-book
+    chapter — so a PDF that numbers nothing still arrives as chapters.
     """
     import pymupdf
     import pymupdf4llm
@@ -88,34 +163,37 @@ def parse_pdf_to_chapters(pdf_path: Path) -> list[tuple[str, str]]:
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
     document = pymupdf.open(pdf_path)
-    bookmarks: list[tuple[str, int]] = []
-    structural_bookmarks: list[tuple[str, int]] = []
-    for _level, raw_title, page_number in document.get_toc():
-        title = " ".join(raw_title.split())
-        if RE_NUMBERED_CHAPTER.match(title):
-            bookmarks.append((title, page_number))
-            structural_bookmarks.append((title, page_number))
-        elif RE_PART_BOOKMARK.match(title):
-            structural_bookmarks.append((title, page_number))
+    bookmarks, structural_bookmarks, source = _select_bookmarks(document.get_toc())
 
     if not bookmarks:
-        print("No numbered chapter bookmarks detected; treating the PDF as one chapter.")
-        markdown = pymupdf4llm.to_markdown(document, page_chunks=False)
+        print("No usable chapter bookmarks detected; looking for headings instead.")
+        markdown = RE_STANDALONE_PAGE_NUMBER.sub(
+            "", pymupdf4llm.to_markdown(document, page_chunks=False)
+        )
+        chapters = _split_markdown_headings(markdown)
+        if chapters:
+            print(f"Detected {len(chapters)} chapters from PDF headings.")
+            return chapters
+        print("No usable headings either; treating the PDF as one chapter.")
         return [("Audiobook", clean_text_segment(markdown))]
 
-    # Embedded bookmarks often omit preface/introduction entries. Include exact
-    # standard-section headings found before the first numbered chapter.
-    first_chapter_page = bookmarks[0][1]
-    prelude_titles = {"preface", "introduction", "foreword", "prologue"}
-    prelude_pages: dict[str, tuple[str, int]] = {}
-    for page_index in range(first_chapter_page - 1):
-        lines = [line.strip() for line in document[page_index].get_text().splitlines()]
-        for line in lines[:8]:
-            if line.lower() in prelude_titles:
-                prelude_pages[line.lower()] = (line.title(), page_index + 1)
-                break
-    bookmarks.extend(prelude_pages.values())
-    structural_bookmarks.extend(prelude_pages.values())
+    if source == "bookmarks":
+        # Embedded bookmarks often omit preface/introduction entries. Include
+        # exact standard-section headings found before the first numbered
+        # chapter.  An outline used whole already carries whatever it names.
+        first_chapter_page = bookmarks[0][1]
+        prelude_titles = {"preface", "introduction", "foreword", "prologue"}
+        prelude_pages: dict[str, tuple[str, int]] = {}
+        for page_index in range(first_chapter_page - 1):
+            lines = [
+                line.strip() for line in document[page_index].get_text().splitlines()
+            ]
+            for line in lines[:8]:
+                if line.lower() in prelude_titles:
+                    prelude_pages[line.lower()] = (line.title(), page_index + 1)
+                    break
+        bookmarks.extend(prelude_pages.values())
+        structural_bookmarks.extend(prelude_pages.values())
 
     def searchable(text: str) -> str:
         return "".join(character.lower() for character in text if character.isalnum())
@@ -169,7 +247,14 @@ def parse_pdf_to_chapters(pdf_path: Path) -> list[tuple[str, str]]:
         if content:
             chapters.append((title, content))
 
-    print(f"Detected {len(chapters)} chapters from PDF bookmarks.")
+    if not chapters:
+        print("Bookmarked sections held no text; treating the PDF as one chapter.")
+        markdown = RE_STANDALONE_PAGE_NUMBER.sub(
+            "", pymupdf4llm.to_markdown(document, page_chunks=False)
+        )
+        return [("Audiobook", clean_text_segment(markdown))]
+
+    print(f"Detected {len(chapters)} chapters from the PDF {source}.")
     return chapters
 
 
@@ -187,8 +272,11 @@ __all__ = [
     "RE_PAGENUMS",
     "RE_PART_BOOKMARK",
     "RE_STANDALONE_PAGE_NUMBER",
+    "RE_MARKDOWN_HEADING",
     "RE_WHITESPACE",
     "_join_markdown_pages",
+    "_select_bookmarks",
+    "_split_markdown_headings",
     "clean_text_segment",
     "parse_pdf_to_chapters",
 ]

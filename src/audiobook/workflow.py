@@ -34,7 +34,7 @@ from .config import (
     VOICE_NAME,
     VOICES_DIR,
 )
-from .extraction.pdf import parse_pdf_to_chapters
+from .extraction import parse_book_to_chapters, source_media_type
 from .synthesis.qwen import (
     build_voice_clone_prompt,
     generate_chunk,
@@ -51,7 +51,8 @@ from .chunking.semantic import NarrationChunk, build_chunk_plan, display_chunk_p
 class PreparationWorkflowOptions:
     """Provider-neutral configuration for producing a prepared script."""
 
-    pdf_path: Path
+    # Any supported book format; the extraction backend is chosen from it.
+    source_path: Path
     output_dir: Path
     provider_name: str
     model: str
@@ -122,8 +123,8 @@ def write_prepared_markdown(book: Any, path: Path) -> None:
     _atomic_write_text(path, "\n".join(lines).rstrip() + "\n")
 
 
-def _book_title_from_pdf(path: Path) -> str:
-    stem = re.sub(r"(?i)pdf$", "", path.stem).strip(" _-")
+def _book_title_from_source(path: Path) -> str:
+    stem = re.sub(r"(?i)(pdf|epub)$", "", path.stem).strip(" _-")
     words = re.sub(r"[_-]+", " ", stem).strip()
     return words.title() or "Audiobook"
 
@@ -140,7 +141,7 @@ def _create_preparation_provider(options: PreparationWorkflowOptions):
 
 
 def prepare_narration_script(options: PreparationWorkflowOptions):
-    """Extract a PDF, adapt its prose, and checkpoint a prepared-book artifact."""
+    """Extract a book, adapt its prose, and checkpoint a prepared-book artifact."""
 
     from .preparation import (
         NarrationPreparationPipeline,
@@ -157,7 +158,7 @@ def prepare_narration_script(options: PreparationWorkflowOptions):
     if options.timeout_seconds <= 0:
         raise ValueError("--provider-timeout must be positive")
 
-    chapters = parse_pdf_to_chapters(options.pdf_path)
+    chapters = parse_book_to_chapters(options.source_path)
     if options.preview_chapters is not None:
         chapters = chapters[: options.preview_chapters]
 
@@ -167,10 +168,10 @@ def prepare_narration_script(options: PreparationWorkflowOptions):
         resume_from = load_prepared_book(script_path)
 
     source = SourceMetadata(
-        path=str(options.pdf_path),
-        sha256=sha256_file(options.pdf_path),
-        size_bytes=options.pdf_path.stat().st_size,
-        media_type="application/pdf",
+        path=str(options.source_path),
+        sha256=sha256_file(options.source_path),
+        size_bytes=options.source_path.stat().st_size,
+        media_type=source_media_type(options.source_path),
     )
     provider = _create_preparation_provider(options)
     pipeline = NarrationPreparationPipeline(provider)
@@ -179,17 +180,31 @@ def prepare_narration_script(options: PreparationWorkflowOptions):
         save_prepared_book(book, script_path)
         write_prepared_markdown(book, prepared_markdown_path(script_path))
 
+    # The unit count is only known once segmentation has run, which happens
+    # inside prepare_book, so the bar is opened by the first progress report.
+    bar: tqdm | None = None
+
+    def progress(done: int, total: int) -> None:
+        nonlocal bar
+        if bar is None:
+            print(f"Adapting {total} units with {provider.metadata.model}...")
+            bar = tqdm(total=total, desc="Preparing", unit="unit")
+        bar.update(done - bar.n)
+
     try:
         book = pipeline.prepare_book(
             chapters,
-            book_title=_book_title_from_pdf(options.pdf_path),
+            book_title=_book_title_from_source(options.source_path),
             source_metadata=source,
             resume_from=resume_from,
             checkpoint=checkpoint,
             max_prose_units=options.preview_units,
+            progress=progress,
         )
         checkpoint(book)
     finally:
+        if bar is not None:
+            bar.close()
         provider.close()
 
     print(f"Prepared narration script: {script_path}")

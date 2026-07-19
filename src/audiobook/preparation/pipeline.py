@@ -30,6 +30,9 @@ from .validation import ValidationPolicy, validate_preparation
 
 
 CheckpointCallback = Callable[[PreparedBook], None]
+# (units_done, units_total) after each prose unit, plus once at (0, total) so a
+# caller can size a progress bar before the first — slow — provider call.
+ProgressCallback = Callable[[int, int], None]
 
 
 def _stable_hash(payload: object) -> str:
@@ -118,12 +121,17 @@ class NarrationPreparationPipeline:
         checkpoint: CheckpointCallback | None = None,
         check_provider: bool = True,
         max_prose_units: int | None = None,
+        progress: ProgressCallback | None = None,
     ) -> PreparedBook:
         """Prepare chapters, resuming matching units from a prior artifact.
 
         ``max_prose_units`` is a book-wide call cap intended for previews. If
         reached, structural units immediately preceding the next prose unit are
         retained and the returned artifact has ``complete=False``.
+
+        ``progress`` is reported in prose units, the only work that costs
+        anything: structural units are copied through, so counting them would
+        make the bar jump in ways that do not match the wait.
         """
 
         if not book_title.strip():
@@ -167,6 +175,8 @@ class NarrationPreparationPipeline:
             complete=False,
         )
         cache = self._cache_from(resume_from)
+        if progress is not None:
+            progress(0, call_limit)
         prose_units_processed = 0
         availability_checked = False
         stop = False
@@ -254,6 +264,8 @@ class NarrationPreparationPipeline:
                 prepared_chapter.units.append(unit)
                 prose_units_processed += 1
                 self._checkpoint(book, checkpoint)
+                if progress is not None:
+                    progress(prose_units_processed, call_limit)
 
             if stop:
                 # Retain a chapter only if it contains structural context or

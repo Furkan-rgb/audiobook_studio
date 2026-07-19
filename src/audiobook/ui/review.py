@@ -2,7 +2,7 @@
 
 The Review step exists so that GPU-hours are never spent narrating text nobody
 looked at.  Reading the prose is only half of that.  The rest is knowing which
-model wrote it, whether the run actually finished, whether the PDF has changed
+model wrote it, whether the run actually finished, whether the source book has changed
 since, and — above all — which units the model *altered*, because reviewing a
 book is reviewing its changes, not re-reading the source.
 
@@ -30,8 +30,8 @@ _HASHES: dict[Path, tuple[float, int, str]] = {}
 def _cached_digest(path: Path) -> str:
     """Hash a source file once per version of it, not once per glance.
 
-    Selecting a prepared script re-checks that its PDF is unchanged, and a book
-    PDF is large enough that re-hashing on every click is felt.  Keyed on mtime
+    Selecting a prepared script re-checks that its source is unchanged, and a
+    book file is large enough that re-hashing on every click is felt.  Keyed on mtime
     and size, so an actually-changed file is still hashed again.
     """
 
@@ -172,7 +172,7 @@ def _format_minutes(minutes: float) -> str:
 
 
 def _source_line(book: PreparedBook) -> str:
-    """Whether the artifact still describes the PDF sitting on disk."""
+    """Whether the artifact still describes the book sitting on disk."""
 
     source = book.source_metadata
     if not source.path:

@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from urllib.error import URLError
 
-from audiobook import cli as make_audiobook
+from audiobook import cli as cli_module
 from audiobook.config import DEFAULT_PREPARATION_MODEL, TTS_MODEL
 from audiobook.workflow import narration_chapters
 from audiobook.preparation import (
@@ -103,6 +103,10 @@ class FakeHTTPResponse:
 
     def read(self, _limit=-1):
         return self.body
+
+    def __iter__(self):
+        # urlopen responses iterate line by line; /api/pull streams NDJSON.
+        return iter(self.body.splitlines(keepends=True))
 
 
 def make_single_unit_book(source_text, prepared_text):
@@ -399,6 +403,31 @@ class PipelineCacheTests(unittest.TestCase):
             ["heading", "prose", "scene_marker", "heading"],
         )
 
+    def test_progress_reports_the_total_before_the_first_provider_call(self):
+        chapters = [("One", f"{self.FIRST}\n\n{self.SECOND}")]
+        reports: list[tuple[int, int]] = []
+
+        self.pipeline(FakeProvider()).prepare_book(
+            chapters,
+            book_title="Progress Test",
+            progress=lambda done, total: reports.append((done, total)),
+        )
+
+        self.assertEqual(reports, [(0, 2), (1, 2), (2, 2)])
+
+    def test_progress_total_follows_the_preview_cap(self):
+        chapters = [("One", f"{self.FIRST}\n\n{self.SECOND}")]
+        reports: list[tuple[int, int]] = []
+
+        self.pipeline(FakeProvider()).prepare_book(
+            chapters,
+            book_title="Progress Test",
+            max_prose_units=1,
+            progress=lambda done, total: reports.append((done, total)),
+        )
+
+        self.assertEqual(reports, [(0, 1), (1, 1)])
+
 
 class ModularWorkflowTests(unittest.TestCase):
     def test_only_prepared_text_is_passed_to_semantic_chunking(self):
@@ -518,12 +547,89 @@ class OllamaProviderTests(unittest.TestCase):
             with self.assertRaisesRegex(ProviderUnavailableError, "ollama serve"):
                 provider.prepare(request)
 
+    def test_missing_model_is_pulled_and_then_reverified(self):
+        progress = []
+        provider = OllamaProvider(
+            model="gemma4:12b",
+            unload_on_close=False,
+            on_pull_progress=progress.append,
+        )
+        empty_tags = json.dumps({"models": []}).encode("utf-8")
+        installed_tags = json.dumps(
+            {"models": [{"name": "gemma4:12b"}]}
+        ).encode("utf-8")
+        pull_stream = b"\n".join(
+            [
+                json.dumps({"status": "pulling manifest"}).encode("utf-8"),
+                json.dumps(
+                    {
+                        "status": "pulling 5f4c",
+                        "completed": 6 * 1024**3,
+                        "total": 12 * 1024**3,
+                    }
+                ).encode("utf-8"),
+                json.dumps({"status": "success"}).encode("utf-8"),
+            ]
+        )
+        endpoints = []
+
+        def fake_urlopen(request, timeout):
+            endpoints.append(request.full_url.rsplit("/", 1)[-1])
+            if request.full_url.endswith("/api/pull"):
+                return FakeHTTPResponse(pull_stream)
+            # The first probe finds nothing; the one after the pull finds it.
+            return FakeHTTPResponse(
+                installed_tags if "pull" in endpoints else empty_tags
+            )
+
+        with patch(
+            "audiobook.preparation.providers.ollama.urlopen",
+            side_effect=fake_urlopen,
+        ):
+            provider.check_available()
+
+        self.assertEqual(endpoints, ["tags", "pull", "tags"])
+        self.assertIn("50% of 12.0 GB", "\n".join(progress))
+        self.assertTrue(any("is not installed" in line for line in progress))
+
+    def test_failed_pull_and_disabled_auto_pull_report_the_manual_command(self):
+        empty_tags = json.dumps({"models": []}).encode("utf-8")
+
+        manual = OllamaProvider(
+            model="gemma4:12b", unload_on_close=False, auto_pull=False
+        )
+        with patch(
+            "audiobook.preparation.providers.ollama.urlopen",
+            return_value=FakeHTTPResponse(empty_tags),
+        ):
+            with self.assertRaisesRegex(
+                ProviderUnavailableError, "ollama pull gemma4:12b"
+            ):
+                manual.check_available()
+
+        automatic = OllamaProvider(
+            model="typo:12b", unload_on_close=False, on_pull_progress=lambda _line: None
+        )
+        pull_error = json.dumps({"error": "file does not exist"}).encode("utf-8")
+
+        def fake_urlopen(request, timeout):
+            if request.full_url.endswith("/api/pull"):
+                return FakeHTTPResponse(pull_error)
+            return FakeHTTPResponse(empty_tags)
+
+        with patch(
+            "audiobook.preparation.providers.ollama.urlopen",
+            side_effect=fake_urlopen,
+        ):
+            with self.assertRaisesRegex(ProviderResponseError, "could not pull"):
+                automatic.check_available()
+
 
 class CommandLineTests(unittest.TestCase):
     def test_subcommands_expose_only_their_relevant_model_options(self):
-        prepare_args = make_audiobook.parse_args(["prepare"])
-        narrate_args = make_audiobook.parse_args(["narrate"])
-        all_args = make_audiobook.parse_args(["all"])
+        prepare_args = cli_module.parse_args(["prepare"])
+        narrate_args = cli_module.parse_args(["narrate"])
+        all_args = cli_module.parse_args(["all"])
 
         self.assertEqual(prepare_args.command, "prepare")
         self.assertTrue(hasattr(prepare_args, "preparation_model"))
@@ -536,7 +642,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertTrue(hasattr(all_args, "tts_model"))
 
     def test_default_is_installed_gemma_and_is_distinct_from_qwen_tts(self):
-        args = make_audiobook.parse_args([])
+        args = cli_module.parse_args([])
 
         self.assertEqual(args.command, "all")
         self.assertEqual(DEFAULT_PREPARATION_MODEL, "gemma4:12b")
@@ -547,7 +653,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertIn("Qwen3-TTS", TTS_MODEL)
 
     def test_preparation_and_tts_models_can_be_overridden_independently(self):
-        args = make_audiobook.parse_args(
+        args = cli_module.parse_args(
             [
                 "all",
                 "--preparation-model",
@@ -561,7 +667,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(args.tts_model, "/models/qwen-custom")
 
     def test_legacy_options_route_to_the_all_workflow(self):
-        args = make_audiobook.parse_args(["--dry-run", "--preview-chunks", "1"])
+        args = cli_module.parse_args(["--dry-run", "--preview-chunks", "1"])
 
         self.assertEqual(args.command, "all")
         self.assertTrue(args.dry_run)

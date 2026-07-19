@@ -1,4 +1,4 @@
-"""CLI for the modular PDF → prepared script → Qwen3-TTS workflow."""
+"""CLI for the modular book → prepared script → Qwen3-TTS workflow."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ from .config import (
     CONTEXT_CHARS,
     DEFAULT_OUTPUT_DIR,
     DEFAULT_OUTPUT_FILENAME,
-    DEFAULT_PDF_PATH,
+    DEFAULT_BOOK_PATH,
     DEFAULT_PREPARATION_MODEL,
     DEFAULT_PREPARATION_PROVIDER,
     DEFAULT_PREPARED_MARKDOWN_FILENAME,
@@ -54,6 +54,11 @@ from .workflow import (
     narration_chapters,
     prepare_narration_script,
     resolve_script_path,
+)
+from .extraction import (
+    SUPPORTED_SOURCE_SUFFIXES,
+    parse_book_to_chapters,
+    parse_epub_to_chapters,
 )
 from .extraction.pdf import (
     RE_BOLD,
@@ -97,7 +102,8 @@ from .chunking.semantic import (
 
 
 # Compatibility names retained for scripts that imported the former monolith.
-PDF_PATH = DEFAULT_PDF_PATH
+BOOK_PATH = DEFAULT_BOOK_PATH
+PDF_PATH = BOOK_PATH
 OUTPUT_FOLDER = DEFAULT_OUTPUT_DIR
 OUTPUT_FILENAME = DEFAULT_OUTPUT_FILENAME
 PREVIEW_OUTPUT_FILENAME = DEFAULT_PREVIEW_OUTPUT_FILENAME
@@ -123,7 +129,17 @@ def _add_script_argument(parser: argparse.ArgumentParser) -> None:
 
 
 def _add_preparation_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--pdf", type=Path, default=PDF_PATH)
+    parser.add_argument(
+        "--book",
+        "--pdf",
+        dest="book",
+        type=Path,
+        default=BOOK_PATH,
+        help=(
+            "Book to extract; the backend follows the extension "
+            f"({', '.join(SUPPORTED_SOURCE_SUFFIXES)})."
+        ),
+    )
     parser.add_argument("--provider", default=PREPARATION_PROVIDER)
     parser.add_argument("--preparation-model", default=PREPARATION_MODEL)
     parser.add_argument(
@@ -191,7 +207,17 @@ def _default_benchmark_output_dir() -> Path:
 
 
 def _add_benchmark_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--pdf", type=Path, default=PDF_PATH)
+    parser.add_argument(
+        "--book",
+        "--pdf",
+        dest="book",
+        type=Path,
+        default=BOOK_PATH,
+        help=(
+            "Book to extract; the backend follows the extension "
+            f"({', '.join(SUPPORTED_SOURCE_SUFFIXES)})."
+        ),
+    )
     parser.add_argument("--provider", default=PREPARATION_PROVIDER)
     parser.add_argument(
         "--models",
@@ -248,7 +274,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
     prepare_parser = subparsers.add_parser(
         "prepare",
-        help="Extract and adapt a PDF into a reviewable narration script.",
+        help="Extract and adapt a book into a reviewable narration script.",
     )
     _add_output_argument(prepare_parser)
     _add_script_argument(prepare_parser)
@@ -266,7 +292,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
     all_parser = subparsers.add_parser(
         "all",
-        help="Prepare a PDF and narrate the resulting script.",
+        help="Prepare a book and narrate the resulting script.",
     )
     _add_output_argument(all_parser)
     _add_script_argument(all_parser)
@@ -312,7 +338,7 @@ def _preparation_options(args: argparse.Namespace) -> PreparationWorkflowOptions
     ):
         preview_units = 1
     return PreparationWorkflowOptions(
-        pdf_path=args.pdf,
+        source_path=args.book,
         output_dir=args.output_dir,
         script_path=args.script,
         provider_name=args.provider,
@@ -344,7 +370,7 @@ def _narration_options(
 
 def _benchmark_options(args: argparse.Namespace) -> BenchmarkOptions:
     return BenchmarkOptions(
-        pdf_path=args.pdf,
+        source_path=args.book,
         output_dir=args.output_dir or _default_benchmark_output_dir(),
         provider_name=args.provider,
         models=tuple(args.models),

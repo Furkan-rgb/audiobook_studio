@@ -13,7 +13,7 @@ import tempfile
 from time import perf_counter
 from typing import Any, Callable, Sequence
 
-from ..extraction.pdf import parse_pdf_to_chapters
+from ..extraction import parse_book_to_chapters, source_media_type
 from ..preparation import (
     NarrationPreparationPipeline,
     NarrationPreparationProvider,
@@ -42,7 +42,7 @@ DEFAULT_BENCHMARK_MODELS = (
 class BenchmarkOptions:
     """Configuration shared by every model in one preparation benchmark."""
 
-    pdf_path: Path
+    source_path: Path
     output_dir: Path
     provider_name: str
     models: tuple[str, ...]
@@ -163,7 +163,7 @@ class BenchmarkReport:
             "created_at": self.created_at,
             "source": self.source.to_dict(),
             "configuration": {
-                "pdf_path": str(self.options.pdf_path),
+                "source_path": str(self.options.source_path),
                 "output_dir": str(self.options.output_dir),
                 "provider": self.options.provider_name,
                 "models": list(self.options.models),
@@ -419,7 +419,7 @@ def _render_markdown(report: BenchmarkReport) -> str:
         "# Narration preparation benchmark",
         "",
         f"- Provider: `{report.options.provider_name}`",
-        f"- Source: `{report.options.pdf_path}`",
+        f"- Source: `{report.options.source_path}`",
         f"- Chapters sampled: {report.options.preview_chapters}",
         f"- Prose units sampled: {report.options.preview_units}",
         f"- Repetitions per model: {report.options.repetitions}",
@@ -552,13 +552,13 @@ def benchmark_preparation(
     selected = (
         list(chapters)
         if chapters is not None
-        else parse_pdf_to_chapters(options.pdf_path)
+        else parse_book_to_chapters(options.source_path)
     )
     selected = selected[: options.preview_chapters]
     if not selected:
         raise RuntimeError("No chapters were available for the benchmark")
     source = source_metadata or source_metadata_for_path(
-        options.pdf_path, media_type="application/pdf"
+        options.source_path, media_type=source_media_type(options.source_path)
     )
     options.output_dir.mkdir(parents=True, exist_ok=True)
     runs: list[ModelRunResult] = []
@@ -594,7 +594,7 @@ def benchmark_preparation(
 
                 book = pipeline.prepare_book(
                     selected,
-                    book_title=_book_title(options.pdf_path),
+                    book_title=_book_title(options.source_path),
                     source_metadata=source,
                     checkpoint=checkpoint,
                     max_prose_units=options.preview_units,

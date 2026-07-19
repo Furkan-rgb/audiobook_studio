@@ -26,7 +26,7 @@ import soundfile as sf
 from ..config import (
     ACTIVE_VOICE,
     DEFAULT_OUTPUT_DIR,
-    DEFAULT_PDF_PATH,
+    DEFAULT_BOOK_PATH,
     DEFAULT_PREPARATION_MODEL,
     DEFAULT_PREPARATION_PROVIDER,
     DEFAULT_PROVIDER_BASE_URL,
@@ -45,6 +45,7 @@ from ..config import (
     VOICE_REFERENCE_TEXT,
     VOICES_DIR,
 )
+from ..extraction import SUPPORTED_SOURCE_SUFFIXES
 from ..preparation import provider_descriptor, provider_descriptors
 from ..synthesis.qwen import build_voice_clone_prompt, design_reference_clip
 from ..synthesis.voices import describe, resolve_voice
@@ -550,8 +551,22 @@ def _provider_note(descriptor) -> str:
     return note
 
 
+def _default_book_path() -> str | None:
+    """Preselect a book sitting beside the project, whatever format it is in.
+
+    DEFAULT_BOOK_PATH names one file, but the picker accepts every supported
+    format, so a ``book.epub`` next to the configured ``book.pdf`` is just as
+    good a starting point as the one that happens to be spelled in config.
+    """
+
+    candidates = [DEFAULT_BOOK_PATH] + [
+        DEFAULT_BOOK_PATH.with_suffix(suffix) for suffix in SUPPORTED_SOURCE_SUFFIXES
+    ]
+    return next((str(path) for path in candidates if path.exists()), None)
+
+
 def _prepare(
-    pdf: str | None,
+    book: str | None,
     output_dir: str,
     provider: str,
     model: str,
@@ -560,7 +575,7 @@ def _prepare(
     preview_units: int,
     force: bool,
 ):
-    """Extract and adapt a PDF, then show the reviewable markdown.
+    """Extract and adapt a book, then show the reviewable markdown.
 
     Base URL and credentials are deliberately not exposed: they describe where
     the LLM lives, which is either right in config or wrong everywhere, and
@@ -568,8 +583,8 @@ def _prepare(
     choices, taken from what the adapters declare.
     """
 
-    if not pdf:
-        yield "Choose a PDF first.", gr.update()
+    if not book:
+        yield "Choose a book first.", gr.update()
         return
 
     try:
@@ -585,7 +600,7 @@ def _prepare(
         return
 
     options = PreparationWorkflowOptions(
-        pdf_path=Path(pdf),
+        source_path=Path(book),
         output_dir=Path(output_dir),
         provider_name=descriptor.name,
         model=model or descriptor.default_model,
@@ -796,18 +811,18 @@ def build_app() -> gr.Blocks:
 
         with gr.Tab("Book narration"):
             gr.Markdown(
-                "PDF in, audiobook out — in two steps with a review between. "
+                "Book in, audiobook out — in two steps with a review between. "
                 "Prepare adapts the text for listening; read the result before "
                 "spending GPU-hours narrating it."
             )
 
             gr.Markdown("## 1 · Prepare")
             with gr.Row():
-                pdf_input = gr.File(
-                    label="PDF",
-                    file_types=[".pdf"],
+                book_input = gr.File(
+                    label="Book (PDF or EPUB)",
+                    file_types=list(SUPPORTED_SOURCE_SUFFIXES),
                     type="filepath",
-                    value=str(DEFAULT_PDF_PATH) if DEFAULT_PDF_PATH.exists() else None,
+                    value=_default_book_path(),
                 )
                 prepare_output_dir = gr.Textbox(
                     label="Output directory", value=str(DEFAULT_OUTPUT_DIR)
@@ -1127,7 +1142,7 @@ def build_app() -> gr.Blocks:
         ).then(
             _prepare,
             inputs=[
-                pdf_input,
+                book_input,
                 prepare_output_dir,
                 provider,
                 preparation_model,

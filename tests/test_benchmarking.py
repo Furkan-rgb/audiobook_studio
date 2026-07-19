@@ -74,7 +74,7 @@ class BenchmarkFakeProvider:
 class PreparationBenchmarkTests(unittest.TestCase):
     def options(self, output_dir, models=("model-small", "model-large"), repetitions=2):
         return BenchmarkOptions(
-            pdf_path=Path("fixture.pdf"),
+            source_path=Path("fixture.pdf"),
             output_dir=output_dir,
             provider_name="fake",
             models=models,
