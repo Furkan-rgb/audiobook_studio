@@ -280,6 +280,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     _add_benchmark_arguments(benchmark_parser)
 
+    subparsers.add_parser(
+        "check",
+        help="Probe every configured dependency and report, without running.",
+    )
+
     raw_args = list(sys.argv[1:] if argv is None else argv)
     if not raw_args:
         raw_args = ["all"]
@@ -288,6 +293,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "narrate",
         "all",
         "benchmark",
+        "check",
         "-h",
         "--help",
     }:
@@ -353,6 +359,14 @@ def _benchmark_options(args: argparse.Namespace) -> BenchmarkOptions:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     try:
+        if args.command == "check":
+            from .preflight import format_report, passed, run_preflight
+
+            results = run_preflight()
+            print(format_report(results))
+            if not passed(results):
+                raise SystemExit(1)
+            return
         if args.command == "benchmark":
             report = benchmark_preparation(_benchmark_options(args))
             print(f"Benchmark JSON: {report.json_path}")

@@ -1,0 +1,288 @@
+"""Startup checks: probe everything the configured pipeline needs, up front.
+
+Each stage already verifies its own dependencies, but only at the moment it
+needs them — ffmpeg is checked after TTS has generated audio, the Ollama model
+after extraction has run.  Failing there wastes the minutes of work that came
+before.  This module asks the same questions before any work starts, reading
+the answers from the same config the stages will use.
+
+Checks are ordered from environment to configuration, and none of them loads a
+model or decodes audio: preflight must cost seconds, not minutes.
+"""
+
+from __future__ import annotations
+
+import shutil
+from dataclasses import dataclass
+from pathlib import Path
+
+from .config import (
+    ACTIVE_VOICE,
+    ASR_MODEL,
+    DEFAULT_OUTPUT_DIR,
+    DEFAULT_PREPARATION_MODEL,
+    DEFAULT_PREPARATION_PROVIDER,
+    DEFAULT_PROVIDER_BASE_URL,
+    LOCAL_TTS_MODEL_PATH,
+    LOCAL_VOICE_CLONE_MODEL_PATH,
+    LOCAL_VOICE_DESIGN_MODEL_PATH,
+    REFERENCE_TRANSCRIBE,
+    TTS_BACKEND,
+    TTS_MODEL,
+    VOICE_CLONE_MODEL,
+    VOICE_DESIGN_MODEL,
+    VOICE_REFERENCE_METADATA_FILENAME,
+    VOICES_DIR,
+)
+from .synthesis.voices import AUDIO_SUFFIXES
+
+OK = "ok"
+WARN = "warn"
+FAIL = "fail"
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    """Outcome of one probe: what was checked, how it went, and what to do."""
+
+    name: str
+    status: str
+    detail: str
+
+
+def _check_ffmpeg() -> CheckResult:
+    path = shutil.which("ffmpeg")
+    if path:
+        return CheckResult("ffmpeg", OK, path)
+    return CheckResult(
+        "ffmpeg",
+        FAIL,
+        "Not on PATH. Needed to decode reference voices and write the M4B. "
+        "Install it (e.g. apt install ffmpeg).",
+    )
+
+
+def _check_packages() -> CheckResult:
+    import importlib.util
+
+    required = ["torch", "qwen_tts", "soundfile", "numpy", "tqdm", "pymupdf4llm"]
+    if REFERENCE_TRANSCRIBE:
+        required += ["librosa", "transformers"]
+    missing = [name for name in required if importlib.util.find_spec(name) is None]
+    if not missing:
+        return CheckResult("python packages", OK, ", ".join(required))
+    return CheckResult(
+        "python packages",
+        FAIL,
+        f"Missing: {', '.join(missing)}. Run: .venv/bin/python -m pip install "
+        "-r requirements.txt",
+    )
+
+
+def _check_cuda() -> CheckResult:
+    try:
+        import torch
+    except ImportError:
+        return CheckResult("CUDA GPU", FAIL, "torch is not installed.")
+    if not torch.cuda.is_available():
+        return CheckResult(
+            "CUDA GPU",
+            FAIL,
+            "No CUDA device. TTS synthesis, voice design and cloning all "
+            "require one.",
+        )
+    properties = torch.cuda.get_device_properties(0)
+    total_gb = properties.total_memory / 1024**3
+    detail = f"{properties.name}, {total_gb:.0f} GB"
+    if total_gb < 6:
+        return CheckResult(
+            "CUDA GPU",
+            WARN,
+            f"{detail} — under 6 GB; a 1.7B checkpoint plus generation may "
+            "not fit.",
+        )
+    return CheckResult("CUDA GPU", OK, detail)
+
+
+def _check_checkpoint(name: str, local_path: Path, remote_id: str) -> CheckResult:
+    """A missing local checkpoint is a surprise download, not an error."""
+
+    if local_path.exists():
+        return CheckResult(name, OK, str(local_path))
+    return CheckResult(
+        name,
+        WARN,
+        f"{local_path} not found; will download {remote_id} from Hugging Face "
+        "on first use.",
+    )
+
+
+def _checkpoint_checks() -> list[CheckResult]:
+    if TTS_BACKEND == "voice_clone":
+        return [
+            _check_checkpoint(
+                "clone checkpoint", LOCAL_VOICE_CLONE_MODEL_PATH, VOICE_CLONE_MODEL
+            ),
+            _check_checkpoint(
+                "design checkpoint", LOCAL_VOICE_DESIGN_MODEL_PATH, VOICE_DESIGN_MODEL
+            ),
+        ]
+    if TTS_BACKEND == "custom_voice":
+        return [_check_checkpoint("TTS checkpoint", LOCAL_TTS_MODEL_PATH, TTS_MODEL)]
+    return [
+        CheckResult(
+            "TTS backend",
+            FAIL,
+            f"Unknown TTS_BACKEND {TTS_BACKEND!r}; expected 'voice_clone' or "
+            "'custom_voice'.",
+        )
+    ]
+
+
+def _check_active_voice() -> CheckResult:
+    """Confirm ACTIVE_VOICE points at something, without decoding it.
+
+    Mirrors the resolution order of ``resolve_voice`` but stops at existence:
+    decoding runs ffmpeg and possibly Whisper, which preflight must not.
+    """
+
+    if TTS_BACKEND != "voice_clone":
+        return CheckResult("narrator voice", OK, f"built-in speaker ({TTS_BACKEND})")
+
+    spec = str(ACTIVE_VOICE)
+    candidate = Path(spec)
+    if (VOICES_DIR / spec / VOICE_REFERENCE_METADATA_FILENAME).exists():
+        return CheckResult("narrator voice", OK, f"designed voice {spec!r}")
+    if candidate.is_file() and candidate.suffix.lower() in AUDIO_SUFFIXES:
+        return CheckResult("narrator voice", OK, f"recording {spec}")
+    if (VOICES_DIR / candidate.name).is_file():
+        return CheckResult("narrator voice", OK, f"recording {VOICES_DIR / candidate.name}")
+    return CheckResult(
+        "narrator voice",
+        FAIL,
+        f"ACTIVE_VOICE = {spec!r} is neither a designed voice in {VOICES_DIR} "
+        "nor an audio file. Design one in the UI or with design_voice.py.",
+    )
+
+
+def _check_preparation_provider(
+    provider: str = DEFAULT_PREPARATION_PROVIDER,
+    model: str = DEFAULT_PREPARATION_MODEL,
+    base_url: str = DEFAULT_PROVIDER_BASE_URL,
+) -> CheckResult:
+    """Ask the configured LLM provider whether it can actually serve requests.
+
+    For Ollama this confirms both that the server answers and that the model
+    is pulled — the two ways a prepare run dies after extraction already ran.
+    """
+
+    from .preparation import create_provider, provider_descriptor
+    from .preparation.providers.base import (
+        ProviderResponseError,
+        ProviderUnavailableError,
+    )
+
+    name = f"preparation LLM ({provider}: {model})"
+    try:
+        descriptor = provider_descriptor(provider)
+    except ValueError as exc:
+        return CheckResult(name, FAIL, str(exc))
+    if model not in descriptor.models:
+        return CheckResult(
+            name,
+            WARN,
+            f"{model!r} is not in PREPARATION_PROVIDERS[{provider!r}]['models']; "
+            "the frontend cannot offer it.",
+        )
+    # A hosted provider fails at the first LLM call, long after extraction has
+    # run; a missing key is knowable now.
+    missing = descriptor.missing_requirement()
+    if missing:
+        return CheckResult(name, FAIL, missing)
+    try:
+        instance = create_provider(provider, model=model, base_url=base_url, timeout=15.0)
+    except ValueError as exc:
+        return CheckResult(name, FAIL, str(exc))
+    try:
+        instance.check_available()
+    except (ProviderUnavailableError, ProviderResponseError) as exc:
+        return CheckResult(name, FAIL, str(exc))
+    finally:
+        instance.close()
+    return CheckResult(name, OK, base_url)
+
+
+def _check_asr_cache() -> CheckResult:
+    """Whisper downloads on first use; say so before a run stalls on it."""
+
+    if not REFERENCE_TRANSCRIBE:
+        return CheckResult("ASR model", OK, "disabled (REFERENCE_TRANSCRIBE = False)")
+    try:
+        from huggingface_hub import try_to_load_from_cache
+
+        cached = try_to_load_from_cache(ASR_MODEL, "config.json")
+    except Exception:
+        return CheckResult("ASR model", WARN, f"Could not inspect the cache for {ASR_MODEL}.")
+    if isinstance(cached, str):
+        return CheckResult("ASR model", OK, f"{ASR_MODEL} (cached)")
+    return CheckResult(
+        "ASR model",
+        WARN,
+        f"{ASR_MODEL} not cached; the first imported recording will download it.",
+    )
+
+
+def _check_output_dir(output_dir: Path = DEFAULT_OUTPUT_DIR) -> CheckResult:
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        probe = output_dir / ".preflight-write-test"
+        probe.write_text("", encoding="utf-8")
+        probe.unlink()
+    except OSError as exc:
+        return CheckResult("output directory", FAIL, f"Cannot write {output_dir}: {exc}")
+    return CheckResult("output directory", OK, str(output_dir))
+
+
+def run_preflight() -> list[CheckResult]:
+    """Run every check and return the results, failures included."""
+
+    results = [
+        _check_ffmpeg(),
+        _check_packages(),
+        _check_cuda(),
+        *_checkpoint_checks(),
+        _check_active_voice(),
+        _check_preparation_provider(),
+        _check_asr_cache(),
+        _check_output_dir(),
+    ]
+    return results
+
+
+def format_report(results: list[CheckResult]) -> str:
+    """Render results as an aligned terminal report."""
+
+    marks = {OK: "✓", WARN: "!", FAIL: "✗"}
+    width = max(len(result.name) for result in results)
+    lines = [
+        f" {marks[result.status]} {result.name.ljust(width)}  {result.detail}"
+        for result in results
+    ]
+    failures = sum(result.status == FAIL for result in results)
+    warnings = sum(result.status == WARN for result in results)
+    if failures:
+        lines.append(f"\n{failures} check(s) failed.")
+    elif warnings:
+        lines.append(f"\nReady, with {warnings} warning(s).")
+    else:
+        lines.append("\nAll checks passed.")
+    return "\n".join(lines)
+
+
+def passed(results: list[CheckResult]) -> bool:
+    """Whether startup should proceed: warnings allowed, failures not."""
+
+    return all(result.status != FAIL for result in results)
+
+
+__all__ = ["CheckResult", "FAIL", "OK", "WARN", "format_report", "passed", "run_preflight"]

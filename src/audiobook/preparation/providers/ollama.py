@@ -17,7 +17,7 @@ from ..types import (
     PreparationResult,
     ProviderMetadata,
 )
-from .base import ProviderResponseError, ProviderUnavailableError
+from .base import ProviderDescriptor, ProviderResponseError, ProviderUnavailableError
 
 
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
@@ -25,8 +25,37 @@ DEFAULT_OLLAMA_MODEL = "gemma4:12b"
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
 
 
+def _configured() -> dict[str, Any]:
+    """This adapter's config entry, if the project defines one.
+
+    Imported lazily so the preparation package keeps working standalone: the
+    constants above are the fallback when there is no config to read.
+    """
+
+    try:
+        from ...config import PREPARATION_PROVIDERS
+    except ImportError:  # pragma: no cover - only when used outside the project
+        return {}
+    entry = PREPARATION_PROVIDERS.get("ollama")
+    return dict(entry) if isinstance(entry, dict) else {}
+
+
 class OllamaProvider:
     """Prepare narration prose through a local Ollama ``/api/chat`` call."""
+
+    @classmethod
+    def describe(cls) -> ProviderDescriptor:
+        entry = _configured()
+        models = tuple(entry.get("models") or (DEFAULT_OLLAMA_MODEL,))
+        return ProviderDescriptor(
+            name="ollama",
+            label="Ollama (local)",
+            models=models,
+            default_model=models[0],
+            base_url=str(entry.get("base_url") or DEFAULT_OLLAMA_BASE_URL),
+            api_key_env=None,
+            local=True,
+        )
 
     def __init__(
         self,

@@ -75,6 +75,10 @@ class NarrationWorkflowOptions:
     dry_run: bool = False
     keep_temp: bool = False
     preparation_was_preview: bool = False
+    # Reference voice for the clone backend. ``None`` falls back to the
+    # committed ACTIVE_VOICE, so the CLI keeps its existing behaviour while a
+    # caller running several narrations can choose per run.
+    voice: str | None = None
 
 
 def resolve_script_path(output_dir: Path, script_path: Path | None) -> Path:
@@ -242,11 +246,11 @@ class _Narrator:
     generate: Callable[[Any], tuple[np.ndarray, int]]
 
 
-def _load_clone_narrator() -> _Narrator:
-    """Load the Base clone model and lock in the committed reference voice."""
+def _load_clone_narrator(voice_spec: str | None = None) -> _Narrator:
+    """Load the Base clone model and lock in the reference voice for this run."""
 
     try:
-        voice = resolve_voice(ACTIVE_VOICE, voices_dir=VOICES_DIR)
+        voice = resolve_voice(voice_spec or ACTIVE_VOICE, voices_dir=VOICES_DIR)
     except FileNotFoundError as exc:
         raise RuntimeError(
             f"{exc} Set ACTIVE_VOICE before narrating with "
@@ -277,17 +281,17 @@ def _load_clone_narrator() -> _Narrator:
     )
 
 
-def _load_narrator(tts_model: str) -> _Narrator:
+def _load_narrator(tts_model: str, voice_spec: str | None = None) -> _Narrator:
     """Build the narrator selected by ``TTS_BACKEND``.
 
     ``tts_model`` is the CustomVoice checkpoint requested on the command line; it
     is used only by the built-in-speaker backend. The clone backend loads the
-    Base checkpoint and the committed reference clip instead.
+    Base checkpoint and the requested reference clip instead.
     """
 
     verify_tts_dependencies()
     if TTS_BACKEND == "voice_clone":
-        return _load_clone_narrator()
+        return _load_clone_narrator(voice_spec)
     if TTS_BACKEND != "custom_voice":
         raise ValueError(f"Unknown TTS_BACKEND: {TTS_BACKEND!r}")
     model = load_qwen_model(tts_model)
@@ -323,7 +327,7 @@ def narrate_chapters(
         return None
 
     verify_audio_dependencies()
-    narrator = _load_narrator(options.tts_model)
+    narrator = _load_narrator(options.tts_model, options.voice)
 
     temp_dir = options.output_dir / "temp_parts"
     if temp_dir.exists():
@@ -437,6 +441,7 @@ def narrate_prepared_script(options: NarrationWorkflowOptions) -> Path | None:
             preparation_was_preview=(
                 options.preparation_was_preview or not book.complete
             ),
+            voice=options.voice,
         ),
         prepared_book=book,
     )

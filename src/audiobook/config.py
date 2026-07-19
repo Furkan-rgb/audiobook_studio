@@ -11,10 +11,21 @@ DEFAULT_PREVIEW_OUTPUT_FILENAME = "audiobook_preview.m4b"
 DEFAULT_PREPARED_SCRIPT_FILENAME = "prepared_book.json"
 DEFAULT_PREPARED_MARKDOWN_FILENAME = "prepared_book.md"
 
-# Narration-preparation provider
+# Narration preparation.  Each provider adapter reads its own entry here to
+# build the menu the frontend offers, so adding a model is a config edit rather
+# than a code change.  Keep the lists to models you can actually reach: a model
+# that is missing (not pulled, or not on your plan) only fails once extraction
+# has already run.  API keys are never stored here — an adapter names the
+# environment variable it reads, and the value stays in your shell.
+PREPARATION_PROVIDERS = {
+    "ollama": {
+        "base_url": "http://127.0.0.1:11434",
+        "models": ("gemma4:12b", "gemma4:26b", "gemma4:31b", "qwen3.6:35b"),
+    },
+}
 DEFAULT_PREPARATION_PROVIDER = "ollama"
-DEFAULT_PREPARATION_MODEL = "gemma4:12b"
-DEFAULT_PROVIDER_BASE_URL = "http://127.0.0.1:11434"
+DEFAULT_PREPARATION_MODEL = PREPARATION_PROVIDERS["ollama"]["models"][0]
+DEFAULT_PROVIDER_BASE_URL = PREPARATION_PROVIDERS["ollama"]["base_url"]
 DEFAULT_PROVIDER_TIMEOUT_SECONDS = 600.0
 
 # Qwen3-TTS

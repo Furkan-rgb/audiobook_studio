@@ -2,6 +2,7 @@
 
 from .base import (
     NarrationPreparationProvider,
+    ProviderDescriptor,
     ProviderError,
     ProviderResponseError,
     ProviderUnavailableError,
@@ -15,6 +16,8 @@ from .registry import (
     ProviderFactory,
     available_providers,
     create_provider,
+    provider_descriptor,
+    provider_descriptors,
     register_provider,
 )
 
@@ -25,11 +28,14 @@ __all__ = [
     "DEFAULT_OLLAMA_MODEL",
     "NarrationPreparationProvider",
     "OllamaProvider",
+    "ProviderDescriptor",
     "ProviderFactory",
     "ProviderError",
     "ProviderResponseError",
     "ProviderUnavailableError",
     "available_providers",
     "create_provider",
+    "provider_descriptor",
+    "provider_descriptors",
     "register_provider",
 ]

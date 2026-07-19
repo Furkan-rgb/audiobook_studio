@@ -19,6 +19,25 @@ PDF extraction
     → chaptered M4B
 ```
 
+## Browser frontend
+
+Every stage is also available as a local web app, which is the easier way to
+review adapted text and to audition voices side by side:
+
+```bash
+python run_ui.py            # http://127.0.0.1:7860
+```
+
+Four tabs matching the stages — **Voices** (design, import a recording, edit a
+transcript, audition), **Book** (extract and adapt a PDF, read the result),
+**Narrate** (preview chunks or render the full M4B) and **Library**. They share
+no state beyond the files on disk, so each works on its own and anything made
+here is usable from the CLI.
+
+Only one Qwen checkpoint stays resident, and GPU work is serialised, so
+switching between designing and narrating swaps models rather than exhausting
+VRAM.
+
 ## Narration preparation
 
 Printed books often contain material that is useful on the page but unpleasant
@@ -240,6 +259,10 @@ src/audiobook/
 ├── cli.py                        # command-line interface
 ├── config.py                     # shared defaults
 ├── workflow.py                   # prepare/narrate orchestration
+├── ui/
+│   ├── app.py                    # four-tab local frontend
+│   ├── library.py                # voice/script/output enumeration
+│   └── runtime.py                # single GPU slot and log streaming
 ├── benchmarking/
 │   └── preparation.py            # model timing, quality metrics, reports
 ├── extraction/
