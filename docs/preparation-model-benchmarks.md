@@ -112,7 +112,7 @@ output. The appendix is the part that changes anyone's mind about a model.
 Useful flags: `--tier`, `--category`, and `--case` narrow a run to a slice of the
 corpus; `--quick` runs a balanced three-cases-per-tier smoke subset; `--corpus-dir`
 points at an alternative corpus. The command writes `comparison.md`,
-`benchmark.json`, and a `plots/` directory of SVG charts to a timestamped
+`benchmark.json`, and a `plots/` directory of PNG charts to a timestamped
 directory under `output/benchmarks/`.
 
 The CLI is a thin wrapper: the runner is `run()` in
@@ -134,19 +134,18 @@ budget, so a thinking run is given a larger floor for both automatically —
 otherwise a long chain truncates the answer and loses the unit. Ollama reports a
 model's capabilities, so a model that cannot think is skipped for the thinking
 pass with a note rather than charged forty-eight identical errors. Thinking is
-several times slower per case; the `speed.svg` chart is where that cost is read
+several times slower per case; the `speed.png` chart is where that cost is read
 against whatever accuracy it bought.
 
 ### Plots
 
-Each run draws three SVG charts under `plots/`, hand-built rather than rendered
-through a plotting library so the package keeps its short dependency list and the
-output is committable text:
+Each run draws three PNG charts under `plots/` with matplotlib, so they embed
+directly in Markdown and on GitHub and need no renderer to view:
 
-- `scores.svg` ranks the composite score and colours any competitor with a
+- `scores.png` ranks the composite score and colours any competitor with a
   fidelity failure, so a wrong-book result cannot hide behind a tall bar.
-- `by-tier.svg` breaks each competitor's score across the four tiers.
-- `speed.svg` plots mean seconds per case, fastest first.
+- `by-tier.png` breaks each competitor's score across the four tiers.
+- `speed.png` plots mean seconds per case, fastest first.
 
 ---
 

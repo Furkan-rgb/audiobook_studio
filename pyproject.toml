@@ -17,6 +17,7 @@ dependencies = [
     "qwen-tts>=0.1.1",
     "tqdm>=4.60.0",
     "gradio>=5.0.0",
+    "matplotlib>=3.8.0",
 ]
 
 [project.scripts]

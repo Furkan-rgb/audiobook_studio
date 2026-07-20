@@ -604,17 +604,19 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertIn(("model-oracle", True), seen)
         self.assertIn(("model-oracle", False), seen)
 
-    def test_it_draws_svg_plots_alongside_the_report(self):
+    def test_it_draws_png_plots_alongside_the_report(self):
         report, _providers = self.run_benchmark(("model-oracle", "model-vandal"))
         plots_dir = report.json_path.parent / "plots"
 
         self.assertEqual(
             {path.name for path in report.plot_paths},
-            {"scores.svg", "by-tier.svg", "speed.svg"},
+            {"scores.png", "by-tier.png", "speed.png"},
         )
-        scores = (plots_dir / "scores.svg").read_text(encoding="utf-8")
-        self.assertIn("<svg", scores)
-        self.assertIn("model-vandal", scores)
+        data = (plots_dir / "scores.png").read_bytes()
+        # PNG magic number, and large enough to be a real render rather than a
+        # blank canvas.
+        self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"))
+        self.assertGreater(len(data), 2000)
 
 
 class BenchmarkRunConvenienceTests(unittest.TestCase):

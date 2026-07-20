@@ -166,8 +166,9 @@ timestamped directory under `output/benchmarks/` containing:
   failure appendix that shows every wrong change as a diff against the gold text;
 - `benchmark.json`, the full machine-readable result including every proposed
   edit;
-- `plots/` — `scores.svg` (the composite-score ranking, with fidelity failures
-  flagged in red), `by-tier.svg`, and `speed.svg`, drawn as dependency-free SVG.
+- `plots/` — `scores.png` (the composite-score ranking, with fidelity failures
+  flagged in red), `by-tier.png`, and `speed.png`, drawn with matplotlib and
+  ready to embed in Markdown.
 
 The corpus is organised into four tiers: **core** (real citations, markers,
 notation, and extraction artifacts to fix), **noop** (clean prose whose correct
@@ -321,7 +322,7 @@ src/audiobook/
 │   ├── corpus.py                # gold cases, anchoring, and per-case linting
 │   ├── scoring.py              # fidelity gate, recall/precision/exactness
 │   ├── report.py               # comparison.md and benchmark.json
-│   ├── plots.py                # dependency-free SVG charts
+│   ├── plots.py                # matplotlib PNG charts
 │   └── cases/*.json            # the 48-case gold corpus
 ├── extraction/
 │   ├── __init__.py               # backend chosen by file extension
