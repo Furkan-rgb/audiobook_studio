@@ -43,6 +43,8 @@ RESPONSE_JSON_SCHEMA: dict[str, object] = {
     "additionalProperties": False,
 }
 
+# TODO: Consider whether the system prompt should be a config value
+#TODO: Review system prompt for effectiveness and clarity
 SYSTEM_PROMPT = """You prepare extracted book prose for faithful audiobook narration.
 
 You do not rewrite the passage. You list only the small edits you would make to
