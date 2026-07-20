@@ -5,12 +5,6 @@
 """
 
 import argparse
-import sys
-from pathlib import Path
-
-_SRC_DIR = Path(__file__).resolve().parent / "src"
-if str(_SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(_SRC_DIR))
 
 from audiobook.preflight import format_report, passed, run_preflight
 from audiobook.ui import launch

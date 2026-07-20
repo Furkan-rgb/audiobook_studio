@@ -11,12 +11,7 @@ the result with ``clone_voice.py`` and select it for book runs by setting
 
 import argparse
 import json
-import sys
 from pathlib import Path
-
-_SRC_DIR = Path(__file__).resolve().parent / "src"
-if str(_SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(_SRC_DIR))
 
 import soundfile as sf
 import torch
