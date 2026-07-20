@@ -1,8 +1,5 @@
-numpy>=2.0.0
-scipy>=1.11.0
-soundfile>=0.12.1
-nltk>=3.8.1
-pymupdf4llm>=0.0.1
-qwen-tts>=0.1.1
-tqdm>=4.60.0
-gradio>=5.0.0
+# Convenience shim so `pip install -r requirements.txt` sets the project up.
+#
+# It installs this repo in editable mode, which pulls in the dependency list
+# declared in pyproject.toml. Add or change dependencies there, not here.
+-e .

@@ -102,10 +102,15 @@ Create the environment and download the TTS model from Hugging Face:
 
 ```bash
 python3.12 -m venv .venv
-.venv/bin/python -m pip install -e .
+.venv/bin/python -m pip install -r requirements.txt
 .venv/bin/hf download Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice \
   --local-dir models/Qwen3-TTS-12Hz-1.7B-CustomVoice
 ```
+
+`requirements.txt` is a one-line shim for `-e .`, so that command installs the
+dependencies *and* puts the `audiobook` package on the import path — the scripts
+at the repo root need both. `.venv/bin/python -m pip install -e .` is equivalent.
+Dependencies are declared in `pyproject.toml`.
 
 Start Ollama:
 

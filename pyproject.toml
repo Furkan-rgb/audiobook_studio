@@ -8,16 +8,22 @@ version = "0.2.0"
 description = "Prepare PDFs and EPUBs for listening and generate chaptered audiobooks with Qwen3-TTS."
 readme = "README.md"
 requires-python = ">=3.12"
-dynamic = ["dependencies"]
+dependencies = [
+    "numpy>=2.0.0",
+    "scipy>=1.11.0",
+    "soundfile>=0.12.1",
+    "nltk>=3.8.1",
+    "pymupdf4llm>=0.0.1",
+    "qwen-tts>=0.1.1",
+    "tqdm>=4.60.0",
+    "gradio>=5.0.0",
+]
 
 [project.scripts]
 audiobook = "audiobook.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.packages.find]
 where = ["src"]
