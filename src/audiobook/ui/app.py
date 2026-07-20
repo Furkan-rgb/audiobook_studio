@@ -56,6 +56,7 @@ from ..workflow import (
     prepare_narration_script,
     prepared_markdown_path,
     resolve_script_path,
+    write_prepared_markdown,
 )
 from .library import (
     delete_voice,
@@ -639,14 +640,14 @@ def _load_review(script: str | None, selected_model: str | None = None):
     """
 
     if not script:
-        return "", gr.update(choices=[], value=None), "", "", {}
+        return "", gr.update(choices=[], value=None), "", None, {}
 
     summary = summarize(script, selected_model)
     try:
         book = load_artifact(script)
     except Exception:
         # summarize() already rendered the reason; the panels stay empty.
-        return summary, gr.update(choices=[], value=None), "", "", {}
+        return summary, gr.update(choices=[], value=None), "", None, {}
 
     units = flagged_units(book)
     keyed = {unit.unit_id: unit for unit in units}
@@ -658,17 +659,16 @@ def _load_review(script: str | None, selected_model: str | None = None):
         else "_The model changed nothing and flagged nothing._"
     )
 
+    # Older artifacts predate the markdown companion file; write it on demand
+    # so the download button always has a real file to point at.
     markdown = prepared_markdown_path(Path(script))
-    text = (
-        markdown.read_text(encoding="utf-8")
-        if markdown.exists()
-        else book.prepared_text
-    )
+    if not markdown.exists():
+        write_prepared_markdown(book, markdown)
     return (
         summary,
         gr.update(choices=choices, value=first.unit_id if first else None),
         detail,
-        text,
+        str(markdown),
         keyed,
     )
 
@@ -682,7 +682,6 @@ def _narrate(
     voice: str | None,
     output_dir: str,
     preview_chunks: int,
-    preview_chapters: int,
     dry_run: bool,
 ):
     """Narrate a prepared script, as a preview or in full."""
@@ -695,7 +694,6 @@ def _narrate(
         output_dir=Path(output_dir),
         tts_model=str(LOCAL_TTS_MODEL_PATH if LOCAL_TTS_MODEL_PATH.exists() else TTS_MODEL),
         script_path=Path(script),
-        preview_chapters=int(preview_chapters) or None,
         preview_chunks=int(preview_chunks) or None,
         dry_run=dry_run,
         voice=voice,
@@ -881,7 +879,9 @@ def build_app() -> gr.Blocks:
                     )
                     flagged_detail = gr.Markdown()
                 with gr.Tab("Full text"):
-                    review = gr.Markdown()
+                    # The prepared book can run long; offer it as a file
+                    # rather than rendering the whole thing inline.
+                    review = gr.DownloadButton(label="Download full text")
             flagged_state = gr.State({})
 
             gr.Markdown("## 3 · Narrate")
@@ -889,20 +889,15 @@ def build_app() -> gr.Blocks:
                 narrate_voice = gr.Dropdown(
                     choices=_voice_choices(), label="Voice", interactive=True
                 )
+                narrate_output_dir = gr.Textbox(
+                    label="Output directory", value=str(DEFAULT_OUTPUT_DIR)
+                )
                 narrate_preview_chunks = gr.Number(
                     label="Preview: first N chunks (0 = whole book)",
                     value=3,
                     precision=0,
                 )
                 dry_run = gr.Checkbox(label="Plan only (no audio)", value=False)
-            with gr.Accordion("Narration settings", open=False):
-                with gr.Row():
-                    narrate_output_dir = gr.Textbox(
-                        label="Output directory", value=str(DEFAULT_OUTPUT_DIR)
-                    )
-                    narrate_preview_chapters = gr.Number(
-                        label="First N chapters (0 = all)", value=0, precision=0
-                    )
             narrate_button = gr.Button("Narrate", variant="primary")
             narrate_log = gr.Textbox(label="Log", lines=10, max_lines=25)
             narrate_result = gr.Audio(label="Result", type="filepath")
@@ -1132,7 +1127,7 @@ def build_app() -> gr.Blocks:
                 "_Preparing a new artifact..._",
                 gr.update(choices=[], value=None),
                 "",
-                "",
+                None,
                 {},
             ),
             outputs=heavy_buttons
@@ -1207,7 +1202,6 @@ def build_app() -> gr.Blocks:
                 narrate_voice,
                 narrate_output_dir,
                 narrate_preview_chunks,
-                narrate_preview_chapters,
                 dry_run,
             ],
             outputs=[narrate_log, narrate_result, audiobook_picker],
