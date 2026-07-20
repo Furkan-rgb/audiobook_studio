@@ -1,0 +1,30 @@
+{
+  "id": "noop-012-blunt-dialogue-not-softened",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "Visiting Hours",
+  "source": "“You were never any good at this,” her mother said. “Sitting. Being in a room with somebody. You get that from your father, and he could not do it either.”\n\nRuth put the flowers into the jug she had brought from home, because the hospital jugs were plastic and her mother would have had something to say about that as well.\n\n“I’m not being cruel. I’m being accurate, and you have never once been able to tell the difference. Thirty years, and every single time you visit you look at the door.” She shifted herself up against the pillows. “Go on, then. Look at it now. I don’t mind. I would far rather you looked at the door than sat there pretending you had somewhere worse to be.”\n\nRuth looked at the door. Then she sat down and stayed until the light had gone off the wall, and neither of them said anything else that was true.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "“You were never any good at this,”",
+      "label": "unkind-dialogue-must-not-be-softened"
+    },
+    {
+      "span": "I’m not being cruel. I’m being accurate",
+      "label": "blunt-line-must-stay-verbatim"
+    },
+    {
+      "span": "Go on, then. Look at it now.",
+      "label": "imperative-in-dialogue-is-character-speech"
+    },
+    {
+      "span": "neither of them said anything else that was true",
+      "label": "closing-line-must-not-be-editorialized"
+    }
+  ],
+  "prepared": "“You were never any good at this,” her mother said. “Sitting. Being in a room with somebody. You get that from your father, and he could not do it either.”\n\nRuth put the flowers into the jug she had brought from home, because the hospital jugs were plastic and her mother would have had something to say about that as well.\n\n“I’m not being cruel. I’m being accurate, and you have never once been able to tell the difference. Thirty years, and every single time you visit you look at the door.” She shifted herself up against the pillows. “Go on, then. Look at it now. I don’t mind. I would far rather you looked at the door than sat there pretending you had somewhere worse to be.”\n\nRuth looked at the door. Then she sat down and stayed until the light had gone off the wall, and neither of them said anything else that was true.",
+  "notes": "A mother saying something deliberately wounding. The temptation is to soften the wording or add a gloss; both are censorship of the author's tone."
+}

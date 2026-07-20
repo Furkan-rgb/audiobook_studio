@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
 
-from .benchmarking import BenchmarkOptions, benchmark_preparation
-from .benchmarking.preparation import DEFAULT_BENCHMARK_MODELS
+from .benchmarking import (
+    CATEGORIES,
+    DEFAULT_BENCHMARK_MODELS,
+    TIERS,
+    BenchmarkOptions,
+    benchmark_preparation,
+    benchmark_progress,
+    default_output_dir,
+    print_summary,
+)
 
 from .assembly.audio import (
     _crossfade,
@@ -201,23 +208,7 @@ def _add_preview_chapters_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _default_benchmark_output_dir() -> Path:
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    return OUTPUT_FOLDER / "benchmarks" / timestamp
-
-
 def _add_benchmark_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--book",
-        "--pdf",
-        dest="book",
-        type=Path,
-        default=BOOK_PATH,
-        help=(
-            "Book to extract; the backend follows the extension "
-            f"({', '.join(SUPPORTED_SOURCE_SUFFIXES)})."
-        ),
-    )
     parser.add_argument("--provider", default=PREPARATION_PROVIDER)
     parser.add_argument(
         "--models",
@@ -238,25 +229,61 @@ def _add_benchmark_arguments(parser: argparse.ArgumentParser) -> None:
         metavar="SECONDS",
     )
     parser.add_argument(
-        "--preview-chapters",
-        type=int,
-        default=1,
-        metavar="N",
-        help="Use the first N detected chapters as the common benchmark sample.",
-    )
-    parser.add_argument(
-        "--preview-units",
-        type=int,
-        default=1,
-        metavar="N",
-        help="Send the first N prose preparation units to every model.",
-    )
-    parser.add_argument(
         "--repetitions",
         type=int,
         default=1,
         metavar="N",
-        help="Run every model N times to measure timing and output consistency.",
+        help="Run every model N times to measure timing and edit determinism.",
+    )
+    parser.add_argument(
+        "--think",
+        choices=["off", "on", "both"],
+        default="off",
+        help=(
+            "Reasoning mode: off (default), on, or both to score each model "
+            "with and without thinking as two ranked entries. Models that do "
+            "not support thinking are reported and skipped for the thinking run."
+        ),
+    )
+    parser.add_argument(
+        "--corpus-dir",
+        type=Path,
+        default=None,
+        help="Gold corpus directory (default: the corpus shipped with the package).",
+    )
+    parser.add_argument(
+        "--tier",
+        dest="tiers",
+        nargs="+",
+        default=[],
+        choices=list(TIERS),
+        metavar="TIER",
+        help=f"Score only these corpus tiers ({', '.join(TIERS)}).",
+    )
+    parser.add_argument(
+        "--category",
+        dest="categories",
+        nargs="+",
+        default=[],
+        choices=list(CATEGORIES),
+        metavar="CATEGORY",
+        help="Score only cases exercising these edit categories.",
+    )
+    parser.add_argument(
+        "--case",
+        dest="case_ids",
+        nargs="+",
+        default=[],
+        metavar="ID",
+        help="Score only these case ids, for reproducing one failure.",
+    )
+    parser.add_argument(
+        "--quick",
+        action="store_true",
+        help=(
+            "Smoke subset: the first three cases of every tier, for checking a "
+            "provider is wired up without paying for a full run."
+        ),
     )
     parser.add_argument(
         "--output-dir",
@@ -368,17 +395,60 @@ def _narration_options(
     )
 
 
+_THINK_MODES = {"off": (False,), "on": (True,), "both": (False, True)}
+
+
+def _models_without_thinking(args: argparse.Namespace) -> tuple[str, ...]:
+    """Which requested models the provider says cannot think.
+
+    Best-effort and Ollama-specific: a probe that cannot reach the server or
+    does not recognise the provider simply reports nothing, so a down server
+    delays the useful error to the run rather than aborting option-building.
+    """
+
+    if args.provider.strip().casefold() != "ollama":
+        return ()
+    try:
+        from .preparation.providers import fetch_model_capabilities
+    except ImportError:
+        return ()
+    blocked: list[str] = []
+    for model in args.models:
+        capabilities = fetch_model_capabilities(
+            args.provider_base_url, model, timeout=min(args.provider_timeout, 15.0)
+        )
+        # An empty set means the probe could not answer; only exclude a model
+        # when the server answered and thinking was absent from the list.
+        if capabilities and "thinking" not in capabilities:
+            blocked.append(model)
+    return tuple(blocked)
+
+
 def _benchmark_options(args: argparse.Namespace) -> BenchmarkOptions:
+    think_modes = _THINK_MODES[args.think]
+    no_think_models: tuple[str, ...] = ()
+    if True in think_modes:
+        no_think_models = _models_without_thinking(args)
+        if no_think_models:
+            print(
+                "Skipping the thinking run for models without a thinking "
+                f"capability: {', '.join(no_think_models)}.",
+                file=sys.stderr,
+            )
     return BenchmarkOptions(
-        source_path=args.book,
-        output_dir=args.output_dir or _default_benchmark_output_dir(),
+        output_dir=args.output_dir or default_output_dir(OUTPUT_FOLDER),
         provider_name=args.provider,
         models=tuple(args.models),
         base_url=args.provider_base_url,
         timeout_seconds=args.provider_timeout,
-        preview_chapters=args.preview_chapters,
-        preview_units=args.preview_units,
         repetitions=args.repetitions,
+        corpus_dir=args.corpus_dir,
+        tiers=tuple(args.tiers),
+        categories=tuple(args.categories),
+        case_ids=tuple(args.case_ids),
+        quick=args.quick,
+        think_modes=think_modes,
+        no_think_models=no_think_models,
     )
 
 
@@ -394,18 +464,13 @@ def main(argv: Sequence[str] | None = None) -> None:
                 raise SystemExit(1)
             return
         if args.command == "benchmark":
-            report = benchmark_preparation(_benchmark_options(args))
-            print(f"Benchmark JSON: {report.json_path}")
-            print(f"Comparison report: {report.markdown_path}")
-            failures = [run for run in report.runs if not run.success]
-            if failures:
-                print(
-                    f"Warning: {len(failures)} of {len(report.runs)} benchmark "
-                    "runs failed; see the report for details.",
-                    file=sys.stderr,
-                )
-            if not any(run.success for run in report.runs):
-                raise RuntimeError("Every benchmark run failed")
+            report = benchmark_preparation(
+                _benchmark_options(args), progress=benchmark_progress
+            )
+            print_summary(report)
+            errored = sum(item.errored_cases for item in report.models_reports)
+            if errored == len(report.runs):
+                raise RuntimeError("Every benchmark case failed to run")
             return
         if args.command == "prepare":
             prepare_narration_script(_preparation_options(args))

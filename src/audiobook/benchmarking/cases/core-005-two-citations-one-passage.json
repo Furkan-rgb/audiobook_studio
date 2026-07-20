@@ -1,0 +1,43 @@
+{
+  "id": "core-005-two-citations-one-passage",
+  "tier": "core",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "The Nudged Memory",
+  "source": "The first experiments (Loftus 1975) used a filmed collision and a single altered verb, and they found that the verb changed what people later remembered seeing. Replications through the following decade widened the effect to photographs, to overheard conversation, and eventually to whole episodes that had never happened at all (Hyman and Pentland 1996).\n\nThe uncomfortable part was never that memory could be nudged. It was that the nudged memory arrived with the same confidence, the same texture, and the same willingness to be sworn to in court as any other.",
+  "expect": [
+    {
+      "anchor": "(Loftus 1975)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "Author-year sourcing inside the sentence."
+    },
+    {
+      "anchor": "(Hyman and Pentland 1996)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "A second author-year citation closing the paragraph."
+    }
+  ],
+  "traps": [
+    {
+      "span": "a filmed collision and a single altered verb",
+      "label": "substantive-detail-must-stay"
+    },
+    {
+      "span": "the same willingness to be sworn to in court",
+      "label": "claim-must-stay"
+    },
+    {
+      "span": "the following decade",
+      "label": "period-reference-must-stay"
+    }
+  ],
+  "prepared": "The first experiments used a filmed collision and a single altered verb, and they found that the verb changed what people later remembered seeing. Replications through the following decade widened the effect to photographs, to overheard conversation, and eventually to whole episodes that had never happened at all.\n\nThe uncomfortable part was never that memory could be nudged. It was that the nudged memory arrived with the same confidence, the same texture, and the same willingness to be sworn to in court as any other.",
+  "notes": "Two citations in one passage, each needing its own edit, with a paragraph break between them. A model that returns one edit covering both, or that stops after the first, scores half."
+}

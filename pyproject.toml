@@ -27,3 +27,8 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+# The gold benchmark corpus is data the package loads at runtime, so a wheel
+# build has to carry it alongside the modules.
+"audiobook.benchmarking" = ["cases/*.json"]

@@ -1,0 +1,31 @@
+{
+  "id": "core-004-citation-semicolon-list",
+  "tier": "core",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "What the Forms Could Not Record",
+  "source": "Surveys of the period agreed on very little, but they agreed that the households counted as ordinary by the census takers were not the households most people lived in (Bell and Weinberg 1978; Green 1987). Boarders, lodgers, widowed parents, and the unmarried siblings who kept a brother’s accounts all sat outside the tidy diagram of husband, wife, and children that the forms were printed to capture. What the forms could not record, the enumerators wrote in the margins, and the margins are where the century’s actual domestic arrangements survive.",
+  "expect": [
+    {
+      "anchor": "(Bell and Weinberg 1978; Green 1987)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "A semicolon-separated citation list is pure apparatus."
+    }
+  ],
+  "traps": [
+    {
+      "span": "husband, wife, and children",
+      "label": "substantive-list-must-stay"
+    },
+    {
+      "span": "wrote in the margins",
+      "label": "claim-must-stay"
+    }
+  ],
+  "prepared": "Surveys of the period agreed on very little, but they agreed that the households counted as ordinary by the census takers were not the households most people lived in. Boarders, lodgers, widowed parents, and the unmarried siblings who kept a brother’s accounts all sat outside the tidy diagram of husband, wife, and children that the forms were printed to capture. What the forms could not record, the enumerators wrote in the margins, and the margins are where the century’s actual domestic arrangements survive.",
+  "notes": "A multi-work citation whose internal semicolon and “and” look like prose. A model fails by removing only one half of the bracket, or by mistaking the enumeration of household members for the same kind of list."
+}

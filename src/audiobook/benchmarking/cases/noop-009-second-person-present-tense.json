@@ -1,0 +1,30 @@
+{
+  "id": "noop-009-second-person-present-tense",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "Night Shift",
+  "source": "You take the stairs because the lift makes a sound at the third floor that you have never been able to explain to anybody. You sign in. The book is the same book it was in November, and your own handwriting from three weeks ago looks like somebody else’s, looser and less careful, a person who had not yet been told what you were told on Tuesday.\n\nYou put the kettle on for a tea you will not drink. Down the corridor a door opens and does not close. This is the part of the shift you like: nothing has gone wrong yet, the whole building is holding still, and you are the only person awake in it who is being paid to be. You check the boards. You wait.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "You take the stairs",
+      "label": "second-person-narration-is-deliberate"
+    },
+    {
+      "span": "You sign in.",
+      "label": "present-tense-must-not-be-converted"
+    },
+    {
+      "span": "a tea you will not drink",
+      "label": "stylistic-phrasing-must-survive"
+    },
+    {
+      "span": "You wait.",
+      "label": "terse-closing-sentence-must-stay"
+    }
+  ],
+  "prepared": "You take the stairs because the lift makes a sound at the third floor that you have never been able to explain to anybody. You sign in. The book is the same book it was in November, and your own handwriting from three weeks ago looks like somebody else’s, looser and less careful, a person who had not yet been told what you were told on Tuesday.\n\nYou put the kettle on for a tea you will not drink. Down the corridor a door opens and does not close. This is the part of the shift you like: nothing has gone wrong yet, the whole building is holding still, and you are the only person awake in it who is being paid to be. You check the boards. You wait.",
+  "notes": "Second-person present tense reads like an instruction manual to a model looking for something to normalise. It is the voice of the chapter and must be left untouched."
+}

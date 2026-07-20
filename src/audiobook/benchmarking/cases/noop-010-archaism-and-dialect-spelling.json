@@ -1,0 +1,30 @@
+{
+  "id": "noop-010-archaism-and-dialect-spelling",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The Ferryman at Struan",
+  "source": "The old man would not say drowned. Folk were tooken by the water, in his telling, as though the loch had a hand and a reason for using it, and he had kept to the word so long that even the minister had given up correcting him. “She were tooken in the March,” he said of his sister, “and them as says otherwise wasna there.”\n\nHe lit a lantern on the jetty every night of the year, which the incomers took for superstition and the older families knew to be plain courtesy: a light so that whoever was out on the water could see the shore, and a light so that the shore could be seen to be waiting. He was ninety-one when he died. The lantern went out the following winter, and nobody on that side of the loch would ever admit to having been the one who let it.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "tooken by the water",
+      "label": "dialect-spelling-must-not-be-corrected"
+    },
+    {
+      "span": "“She were tooken in the March,”",
+      "label": "dialect-grammar-in-dialogue-must-stay"
+    },
+    {
+      "span": "wasna",
+      "label": "dialect-contraction-must-not-be-expanded"
+    },
+    {
+      "span": "ninety-one",
+      "label": "spelled-hyphenated-number-must-stay"
+    }
+  ],
+  "prepared": "The old man would not say drowned. Folk were tooken by the water, in his telling, as though the loch had a hand and a reason for using it, and he had kept to the word so long that even the minister had given up correcting him. “She were tooken in the March,” he said of his sister, “and them as says otherwise wasna there.”\n\nHe lit a lantern on the jetty every night of the year, which the incomers took for superstition and the older families knew to be plain courtesy: a light so that whoever was out on the water could see the shore, and a light so that the shore could be seen to be waiting. He was ninety-one when he died. The lantern went out the following winter, and nobody on that side of the loch would ever admit to having been the one who let it.",
+  "notes": "Dialect grammar and spelling that a model will read as extraction damage or bad English. Correcting any of it is adaptation of meaning, not of presentation."
+}

@@ -1,0 +1,30 @@
+{
+  "id": "robustness-004-no-softening-epidemic",
+  "tier": "robustness",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The Registers of August",
+  "source": "By the second week of August the burial parties had given up keeping separate registers, and the town clerk recorded only totals. Children died faster than adults and in greater numbers, because the water they were given came from the same three wells, and the wells stood downhill of the pits.\n\nA physician who arrived from the coast on the fourteenth found four hundred people alive in a parish that had held eleven hundred at Easter. He wrote to the college that the dying were not delirious at the end but entirely lucid, and that this was the hardest part of the work, since a man who understands what is happening to him asks questions, and there were no answers to give him. The parish took nine years to reach half its former size, and it never reached the whole.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "Children died faster than adults and in greater numbers",
+      "label": "blunt-clause-must-stay"
+    },
+    {
+      "span": "the wells stood downhill of the pits",
+      "label": "causal-detail-must-stay"
+    },
+    {
+      "span": "the dying were not delirious at the end but entirely lucid",
+      "label": "blunt-clause-must-stay"
+    },
+    {
+      "span": "four hundred people alive in a parish that had held eleven hundred at Easter",
+      "label": "figures-must-stay"
+    }
+  ],
+  "prepared": "By the second week of August the burial parties had given up keeping separate registers, and the town clerk recorded only totals. Children died faster than adults and in greater numbers, because the water they were given came from the same three wells, and the wells stood downhill of the pits.\n\nA physician who arrived from the coast on the fourteenth found four hundred people alive in a parish that had held eleven hundred at Easter. He wrote to the college that the dying were not delirious at the end but entirely lucid, and that this was the hardest part of the work, since a man who understands what is happening to him asks questions, and there were no answers to give him. The parish took nine years to reach half its former size, and it never reached the whole.",
+  "notes": "Narrative history of an epidemic, stated flatly and without gratuitous detail, where the grimmest clauses are the load-bearing ones."
+}

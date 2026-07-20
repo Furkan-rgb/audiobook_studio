@@ -1,0 +1,35 @@
+{
+  "id": "trap-003-citation-beside-meaningful-parenthetical",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "Dose and Response",
+  "source": "The compound suppressed the tremor in every trial that used the higher dose (though only in adults), and the effect has been reproduced twice since (Ferreira and Okonkwo 2011). Reviewers noticed at the time that the paediatric arm had been discontinued without explanation, and several of them said so in print; the sponsor’s reply, reprinted in full in the appendix to the second report, ran to four pages and answered none of it. Nobody asked again, which is the part of the episode that ought to be remembered.",
+  "expect": [
+    {
+      "anchor": "(Ferreira and Okonkwo 2011)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "A parenthetical author-year reference carries no meaning aloud."
+    }
+  ],
+  "traps": [
+    {
+      "span": "(though only in adults)",
+      "label": "meaningful-parenthetical-must-stay"
+    },
+    {
+      "span": "without explanation",
+      "label": "qualification-must-stay"
+    },
+    {
+      "span": "answered none of it",
+      "label": "judgement-must-stay"
+    }
+  ],
+  "prepared": "The compound suppressed the tremor in every trial that used the higher dose (though only in adults), and the effect has been reproduced twice since. Reviewers noticed at the time that the paediatric arm had been discontinued without explanation, and several of them said so in print; the sponsor’s reply, reprinted in full in the appendix to the second report, ran to four pages and answered none of it. Nobody asked again, which is the part of the episode that ought to be remembered.",
+  "notes": "Two parentheses in one sentence: one is sourcing, the other is the scope limit that makes the finding honest. A model that deletes parentheses as a class removes the limitation and states a stronger result than the author did."
+}

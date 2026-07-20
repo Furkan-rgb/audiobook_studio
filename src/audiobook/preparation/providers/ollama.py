@@ -84,6 +84,36 @@ def _configured() -> dict[str, Any]:
     return dict(entry) if isinstance(entry, dict) else {}
 
 
+def fetch_model_capabilities(
+    base_url: str, model: str, *, timeout: float = 15.0
+) -> set[str]:
+    """The capabilities Ollama declares for a model, e.g. ``{"thinking"}``.
+
+    Best-effort: any failure — server down, model absent, malformed answer —
+    returns an empty set rather than raising, because a caller uses this only to
+    decide whether a run *can* include a mode, and a probe that cannot answer
+    should not be able to abort the run it was meant to inform.
+    """
+
+    payload = json.dumps({"model": model}).encode("utf-8")
+    request = Request(
+        base_url.rstrip("/") + "/api/show",
+        data=payload,
+        headers={"Accept": "application/json", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            parsed = json.loads(response.read(_MAX_RESPONSE_BYTES).decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, socket.timeout, ConnectionError,
+            UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        return set()
+    capabilities = parsed.get("capabilities") if isinstance(parsed, dict) else None
+    if not isinstance(capabilities, list):
+        return set()
+    return {item for item in capabilities if isinstance(item, str)}
+
+
 class OllamaProvider:
     """Prepare narration prose through a local Ollama ``/api/chat`` call."""
 
@@ -115,6 +145,7 @@ class OllamaProvider:
         # into it loses the whole unit to a truncated JSON string — so it stays
         # generous even though the expected output shrank.
         num_predict: int = 4096,
+        think: bool = False,
         keep_alive: str | int = "10m",
         unload_on_close: bool = True,
         prompt_version: str = DEFAULT_PROMPT_VERSION,
@@ -133,6 +164,14 @@ class OllamaProvider:
         parsed = urlparse(base_url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("Ollama base_url must be an http(s) URL")
+        if think:
+            # A reasoning model emits its thinking before the JSON answer, and
+            # both share the context window and the output budget. A direct
+            # run's limits leave no room for that chain, so the answer is
+            # truncated mid-object and the whole unit is lost. Give thinking
+            # runs a materially larger floor rather than fail them silently.
+            num_ctx = max(num_ctx, 16384)
+            num_predict = max(num_predict, 8192)
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -140,6 +179,7 @@ class OllamaProvider:
         self.seed = seed
         self.num_ctx = num_ctx
         self.num_predict = num_predict
+        self.think = think
         self.keep_alive = keep_alive
         self.unload_on_close = unload_on_close
         self.prompt_version = prompt_version
@@ -163,7 +203,7 @@ class OllamaProvider:
                 "seed": self.seed,
                 "num_ctx": self.num_ctx,
                 "num_predict": self.num_predict,
-                "think": False,
+                "think": self.think,
                 "structured_output": True,
             },
         )
@@ -330,7 +370,7 @@ class OllamaProvider:
                 "model": self.model,
                 "messages": build_messages(request),
                 "stream": False,
-                "think": False,
+                "think": self.think,
                 "format": RESPONSE_JSON_SCHEMA,
                 "keep_alive": self.keep_alive,
                 "options": {

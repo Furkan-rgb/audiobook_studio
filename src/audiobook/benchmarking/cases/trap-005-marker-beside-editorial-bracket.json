@@ -1,0 +1,35 @@
+{
+  "id": "trap-005-marker-beside-editorial-bracket",
+  "tier": "trap",
+  "categories": [
+    "reference_marker"
+  ],
+  "chapter_title": "The Marginal Hand",
+  "source": "The letter Hume sent that October survives only in a copyist’s hand, and the copyist was not careful.[7] Where the original apparently read “I have never held that opinion in publick [sic], nor in private, nor in any company whatsoever,” the printed edition of 1846 quietly modernised the spelling and dropped the last clause altogether. Editors have argued about that missing clause ever since, though no one has yet produced the manuscript that would settle the argument, and it is possible that no one ever will.",
+  "expect": [
+    {
+      "anchor": "[7]",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A numeric endnote marker is a page artefact with nothing to say aloud."
+    }
+  ],
+  "traps": [
+    {
+      "span": "[sic]",
+      "label": "editorial-bracket-must-stay"
+    },
+    {
+      "span": "the printed edition of 1846",
+      "label": "historical-year-must-stay"
+    },
+    {
+      "span": "dropped the last clause altogether",
+      "label": "textual-claim-must-stay"
+    }
+  ],
+  "prepared": "The letter Hume sent that October survives only in a copyist’s hand, and the copyist was not careful. Where the original apparently read “I have never held that opinion in publick [sic], nor in private, nor in any company whatsoever,” the printed edition of 1846 quietly modernised the spelling and dropped the last clause altogether. Editors have argued about that missing clause ever since, though no one has yet produced the manuscript that would settle the argument, and it is possible that no one ever will.",
+  "notes": "Two bracketed spans, one an endnote marker and one an editorial insertion inside a quotation. A model that deletes everything in square brackets silently makes an eighteenth-century misspelling look like the editor's own."
+}

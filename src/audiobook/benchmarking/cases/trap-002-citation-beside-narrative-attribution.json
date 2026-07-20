@@ -1,0 +1,35 @@
+{
+  "id": "trap-002-citation-beside-narrative-attribution",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "What Bieber Believed",
+  "source": "Bieber’s 1962 study argued that the pattern originated in the family, and for the better part of twenty years the profession treated that conclusion as settled (Bieber 1962; Socarides 1968). The interviews behind it had been conducted entirely among patients already in analysis, a limitation the authors stated plainly on their second page and their readers declined to notice. When a later generation went looking for the same pattern outside the consulting room, it was not there, and the silence that followed the search was longer than the argument that preceded it.",
+  "expect": [
+    {
+      "anchor": "(Bieber 1962; Socarides 1968)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "A semicolon-separated author-year list is sourcing, not prose."
+    }
+  ],
+  "traps": [
+    {
+      "span": "Bieber’s 1962 study argued",
+      "label": "narrative-attribution-must-stay"
+    },
+    {
+      "span": "conducted entirely among patients already in analysis",
+      "label": "methodological-qualification-must-stay"
+    },
+    {
+      "span": "it was not there",
+      "label": "negated-finding-must-stay"
+    }
+  ],
+  "prepared": "Bieber’s 1962 study argued that the pattern originated in the family, and for the better part of twenty years the profession treated that conclusion as settled. The interviews behind it had been conducted entirely among patients already in analysis, a limitation the authors stated plainly on their second page and their readers declined to notice. When a later generation went looking for the same pattern outside the consulting room, it was not there, and the silence that followed the search was longer than the argument that preceded it.",
+  "notes": "The same author and the same year appear twice: once as a claim the sentence is about, once as sourcing. A model that pattern-matches on “name plus year” deletes the subject of the sentence."
+}

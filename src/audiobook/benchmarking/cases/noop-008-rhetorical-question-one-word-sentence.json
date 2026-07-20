@@ -1,0 +1,30 @@
+{
+  "id": "noop-008-rhetorical-question-one-word-sentence",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The Cost of Being Right",
+  "source": "What did the committee actually decide that afternoon? Nothing. They agreed to reconvene, which is the oldest and most respectable way of agreeing to nothing at all, and then they went out into a corridor where the ventilation had failed and stood about in twos, telling one another privately what none of them had been willing to say at the table.\n\nIs that cowardice? It is a great deal easier to call it that from here than it was to be the first person on his feet in a room where the chairman had already made his preference obvious, and where a vote against him cost a career and bought an afternoon. Still. Somebody should have stood up, and the minutes of that meeting record, in the flattest language the secretary could manage, that nobody did.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "What did the committee actually decide that afternoon?",
+      "label": "rhetorical-question-must-stay"
+    },
+    {
+      "span": "Nothing.",
+      "label": "one-word-sentence-must-stay"
+    },
+    {
+      "span": "Is that cowardice?",
+      "label": "second-rhetorical-question-must-stay"
+    },
+    {
+      "span": "Still.",
+      "label": "one-word-sentence-must-stay-two"
+    }
+  ],
+  "prepared": "What did the committee actually decide that afternoon? Nothing. They agreed to reconvene, which is the oldest and most respectable way of agreeing to nothing at all, and then they went out into a corridor where the ventilation had failed and stood about in twos, telling one another privately what none of them had been willing to say at the table.\n\nIs that cowardice? It is a great deal easier to call it that from here than it was to be the first person on his feet in a room where the chairman had already made his preference obvious, and where a vote against him cost a career and bought an afternoon. Still. Somebody should have stood up, and the minutes of that meeting record, in the flattest language the secretary could manage, that nobody did.",
+  "notes": "One-word sentences and unanswered questions look like extraction damage. They are the rhythm of the argument, and repairing them would rewrite the passage."
+}

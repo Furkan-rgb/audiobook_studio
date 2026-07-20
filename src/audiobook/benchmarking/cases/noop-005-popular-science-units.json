@@ -1,0 +1,30 @@
+{
+  "id": "noop-005-popular-science-units",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The Ear as a Machine",
+  "source": "The cochlea does not measure loudness the way a microphone does. It is a tapered tube, about 35 millimetres long if you could unroll it, and the membrane running down its length is stiff at the near end and slack at the far one, so that a high tone bends it close to the entrance while a low tone travels most of the way in before it finds the place that will move for it. Frequency, in other words, has been turned into position before the brain ever hears about it. Nothing has been counted; something has been sorted.\n\nThat is why a tone of 4,000 hertz and a tone of 200 hertz arrive on separate wires and never have to be told apart afterwards. The hair cells sitting along the membrane fire when they are bent, and the pitch you perceive is really a report of which cells were tipped over. The organ is not a meter. It is a sorting office, and the sorting is finished before the first message is sent.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "about 35 millimetres long",
+      "label": "measurement-reads-naturally-aloud"
+    },
+    {
+      "span": "4,000 hertz",
+      "label": "figure-with-separator-must-stay"
+    },
+    {
+      "span": "200 hertz",
+      "label": "figure-must-stay"
+    },
+    {
+      "span": "Nothing has been counted; something has been sorted.",
+      "label": "semicolon-sentence-must-stay"
+    }
+  ],
+  "prepared": "The cochlea does not measure loudness the way a microphone does. It is a tapered tube, about 35 millimetres long if you could unroll it, and the membrane running down its length is stiff at the near end and slack at the far one, so that a high tone bends it close to the entrance while a low tone travels most of the way in before it finds the place that will move for it. Frequency, in other words, has been turned into position before the brain ever hears about it. Nothing has been counted; something has been sorted.\n\nThat is why a tone of 4,000 hertz and a tone of 200 hertz arrive on separate wires and never have to be told apart afterwards. The hair cells sitting along the membrane fire when they are bent, and the pitch you perceive is really a report of which cells were tipped over. The organ is not a meter. It is a sorting office, and the sorting is finished before the first message is sent.",
+  "notes": "Numerals with units and a comma-separated figure look like notation a model should 'make listenable', but all three already read aloud exactly as printed."
+}

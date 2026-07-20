@@ -1,0 +1,35 @@
+{
+  "id": "trap-004-citation-inside-dialogue",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "The Kitchen at Grey Farm",
+  "source": "“They told us the river would come back,” she said, setting the cup down without drinking from it. “Nobody said it would come back through the parlour.” The relocation office had used that same phrasing in every letter it sent out that winter (Danner 1984), and the families who kept their letters would find them useful later in ways the office had never intended. “You hold on to a thing like that,” she added, “because one day somebody will ask you to prove it happened.”",
+  "expect": [
+    {
+      "anchor": "(Danner 1984)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "An author-year source note interrupts the narration of speech."
+    }
+  ],
+  "traps": [
+    {
+      "span": "“They told us the river would come back,”",
+      "label": "dialogue-quotes-must-stay"
+    },
+    {
+      "span": "“Nobody said it would come back through the parlour.”",
+      "label": "dialogue-wording-must-stay"
+    },
+    {
+      "span": "“because one day somebody will ask you to prove it happened.”",
+      "label": "closing-quote-marks-must-stay"
+    }
+  ],
+  "prepared": "“They told us the river would come back,” she said, setting the cup down without drinking from it. “Nobody said it would come back through the parlour.” The relocation office had used that same phrasing in every letter it sent out that winter, and the families who kept their letters would find them useful later in ways the office had never intended. “You hold on to a thing like that,” she added, “because one day somebody will ask you to prove it happened.”",
+  "notes": "The one removable thing sits in a paragraph made almost entirely of quoted speech. A model that has learned to strip “visual” notation reaches past the citation for the curly quotation marks."
+}

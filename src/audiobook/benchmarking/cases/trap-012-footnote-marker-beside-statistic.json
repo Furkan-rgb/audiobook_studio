@@ -1,0 +1,39 @@
+{
+  "id": "trap-012-footnote-marker-beside-statistic",
+  "tier": "trap",
+  "categories": [
+    "reference_marker"
+  ],
+  "chapter_title": "Seventeen Point Four",
+  "source": "Only 17.4 per cent of the households surveyed in 1971 had piped water,¹ and the figure for the three northern districts was lower still, at 6 per cent. The engineer who compiled the returns noted in his covering letter that he had counted a standpipe shared by nine families as a single connection, which is exactly the sort of decision that passes into every later table while the letter explaining it stays in the box it was filed in.",
+  "expect": [
+    {
+      "anchor": "¹",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A superscript footnote marker would be narrated as a stray number."
+    }
+  ],
+  "traps": [
+    {
+      "span": "17.4 per cent",
+      "label": "statistic-must-stay"
+    },
+    {
+      "span": "at 6 per cent",
+      "label": "second-statistic-must-stay"
+    },
+    {
+      "span": "surveyed in 1971",
+      "label": "historical-year-must-stay"
+    },
+    {
+      "span": "a standpipe shared by nine families as a single connection",
+      "label": "counting-rule-must-stay"
+    }
+  ],
+  "prepared": "Only 17.4 per cent of the households surveyed in 1971 had piped water, and the figure for the three northern districts was lower still, at 6 per cent. The engineer who compiled the returns noted in his covering letter that he had counted a standpipe shared by nine families as a single connection, which is exactly the sort of decision that passes into every later table while the letter explaining it stays in the box it was filed in.",
+  "notes": "The footnote marker rides directly on a decimal statistic. A model that cleans up the number along with the marker rounds, drops, or reorders a figure the whole chapter turns on."
+}

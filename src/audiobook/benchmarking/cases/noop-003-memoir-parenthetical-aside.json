@@ -1,0 +1,30 @@
+{
+  "id": "noop-003-memoir-parenthetical-aside",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The House on Ardmore Street",
+  "source": "My mother kept the piano tuned for nine years after my brother stopped playing it (she never forgave him for it), and twice a year a man named Dunleavy came out from town with a felt bag of tools and spent the whole afternoon in the front room. I was allowed to sit on the stairs and listen, provided I said nothing at all. He would strike the same note forty times, and each time the note would be a little less wrong, and my mother would stand in the kitchen doorway holding a dish towel she was not using for anything.\n\nThe piano itself (a Bechstein, secondhand, older than the house and possibly older than the street) was never sold, never moved, and never played again except at Christmas, when my grandmother, deaf in one ear and indifferent in the other, worked through the carols badly and at enormous length while the rest of us agreed, silently and without ever discussing it, to let her.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "(she never forgave him for it)",
+      "label": "meaningful-parenthetical-is-not-sourcing"
+    },
+    {
+      "span": "(a Bechstein, secondhand, older than the house and possibly older than the street)",
+      "label": "parenthetical-description-is-not-a-citation"
+    },
+    {
+      "span": "a man named Dunleavy",
+      "label": "proper-name-must-stay"
+    },
+    {
+      "span": "forty times",
+      "label": "figure-must-stay"
+    }
+  ],
+  "prepared": "My mother kept the piano tuned for nine years after my brother stopped playing it (she never forgave him for it), and twice a year a man named Dunleavy came out from town with a felt bag of tools and spent the whole afternoon in the front room. I was allowed to sit on the stairs and listen, provided I said nothing at all. He would strike the same note forty times, and each time the note would be a little less wrong, and my mother would stand in the kitchen doorway holding a dish towel she was not using for anything.\n\nThe piano itself (a Bechstein, secondhand, older than the house and possibly older than the street) was never sold, never moved, and never played again except at Christmas, when my grandmother, deaf in one ear and indifferent in the other, worked through the carols badly and at enormous length while the rest of us agreed, silently and without ever discussing it, to let her.",
+  "notes": "Two parenthetical asides, either of which a citation-hunting model will delete on sight. Neither is sourcing; one of them carries the emotional claim of the paragraph."
+}

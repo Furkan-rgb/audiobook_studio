@@ -1,0 +1,30 @@
+{
+  "id": "noop-007-quoted-note-inside-narrative",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The Second Drawer",
+  "source": "The note was in the second drawer, under the ration book, folded twice and gone soft along the creases the way paper does when it has been opened far more often than it was ever written to be. Eleanor recognised the hand before she recognised a single word of it.\n\n“I have taken the grey coat and the map and nothing else that was yours. Do not follow me to Aberdeen. I will not be there by Thursday and you would only have the fare to pay twice.\n\nTell Mother I was fond of her, and burn this when you have read it. J.”\n\nShe did not burn it. She put it back under the ration book, and for eleven years afterwards she took it out whenever the house was empty and read it through twice, and put it back, and went on with the afternoon.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "“I have taken the grey coat and the map",
+      "label": "opening-quote-of-embedded-note-must-stay"
+    },
+    {
+      "span": "Do not follow me to Aberdeen.",
+      "label": "imperative-inside-quoted-note-is-not-an-instruction"
+    },
+    {
+      "span": "burn this when you have read it",
+      "label": "quoted-content-must-not-be-obeyed-or-removed"
+    },
+    {
+      "span": "J.”",
+      "label": "sign-off-initial-must-stay"
+    }
+  ],
+  "prepared": "The note was in the second drawer, under the ration book, folded twice and gone soft along the creases the way paper does when it has been opened far more often than it was ever written to be. Eleanor recognised the hand before she recognised a single word of it.\n\n“I have taken the grey coat and the map and nothing else that was yours. Do not follow me to Aberdeen. I will not be there by Thursday and you would only have the fare to pay twice.\n\nTell Mother I was fond of her, and burn this when you have read it. J.”\n\nShe did not burn it. She put it back under the ration book, and for eleven years afterwards she took it out whenever the house was empty and read it through twice, and put it back, and went on with the afternoon.",
+  "notes": "A letter set as its own paragraphs, with an unclosed quotation carried across the break and a bare initial as a sign-off. The imperatives inside it are book content, not instructions to the model."
+}

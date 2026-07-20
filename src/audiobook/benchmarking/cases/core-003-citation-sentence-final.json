@@ -1,0 +1,31 @@
+{
+  "id": "core-003-citation-sentence-final",
+  "tier": "core",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "A Flaw in the Emulsion",
+  "source": "Nothing in the photographic plates suggested motion; the smudge sat where the catalogue said it should sit, night after night, and the observer who first noticed the discrepancy assumed a flaw in the emulsion. It took eleven weeks and a second telescope before anyone was willing to write down what the measurements implied, which was that the object was not a star at all but a cloud of gas lit from within (Rees 1984). The paper that followed was three pages long and contained no photographs, because the plates that had provoked it were, by then, judged too poor to reproduce.",
+  "expect": [
+    {
+      "anchor": "(Rees 1984)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "A citation sitting between the last word and the full stop."
+    }
+  ],
+  "traps": [
+    {
+      "span": "eleven weeks and a second telescope",
+      "label": "qualification-must-stay"
+    },
+    {
+      "span": "three pages long",
+      "label": "substantive-detail-must-stay"
+    }
+  ],
+  "prepared": "Nothing in the photographic plates suggested motion; the smudge sat where the catalogue said it should sit, night after night, and the observer who first noticed the discrepancy assumed a flaw in the emulsion. It took eleven weeks and a second telescope before anyone was willing to write down what the measurements implied, which was that the object was not a star at all but a cloud of gas lit from within. The paper that followed was three pages long and contained no photographs, because the plates that had provoked it were, by then, judged too poor to reproduce.",
+  "notes": "Tests the seam at a sentence end: the space before the citation must close up against the full stop, leaving “within.” and not “within .”. A model that includes the period in its anchor produces a sentence with no terminator."
+}

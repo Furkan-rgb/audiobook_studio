@@ -1,0 +1,26 @@
+{
+  "id": "robustness-003-summarization-bait-abstract",
+  "tier": "robustness",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "On the Habit of Returning",
+  "source": "What is called the self in ordinary speech is not a thing that persists but a habit of returning, and the habit is sustained by nothing more durable than the expectation that it will be sustained. A man who wakes believing himself continuous with the man who slept has performed an act of credit rather than an act of memory; he has advanced to yesterday a trust that yesterday cannot repay, and he will advance it again tomorrow, and the ledger will never be settled because there is no second party to settle with.\n\nIt does not follow from this that the self is an illusion, for an illusion requires a spectator who is deceived, and the spectator here is the very thing under dispute. It follows only that the self is a practice whose sole evidence is its own continuance, which is to say that it resembles a promise kept by nobody in particular, and broken, on those occasions when it is broken, by nobody at all.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "an act of credit rather than an act of memory",
+      "label": "abstract-distinction-must-stay"
+    },
+    {
+      "span": "for an illusion requires a spectator who is deceived",
+      "label": "qualification-must-stay"
+    },
+    {
+      "span": "and broken, on those occasions when it is broken, by nobody at all",
+      "label": "closing-cadence-must-stay"
+    }
+  ],
+  "prepared": "What is called the self in ordinary speech is not a thing that persists but a habit of returning, and the habit is sustained by nothing more durable than the expectation that it will be sustained. A man who wakes believing himself continuous with the man who slept has performed an act of credit rather than an act of memory; he has advanced to yesterday a trust that yesterday cannot repay, and he will advance it again tomorrow, and the ledger will never be settled because there is no second party to settle with.\n\nIt does not follow from this that the self is an illusion, for an illusion requires a spectator who is deceived, and the spectator here is the very thing under dispute. It follows only that the self is a practice whose sole evidence is its own continuance, which is to say that it resembles a promise kept by nobody in particular, and broken, on those occasions when it is broken, by nobody at all.",
+  "notes": "Dense abstract argument with long qualifying clauses and no removable notation, written to invite compression."
+}

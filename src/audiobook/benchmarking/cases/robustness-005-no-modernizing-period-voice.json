@@ -1,0 +1,26 @@
+{
+  "id": "robustness-005-no-modernizing-period-voice",
+  "tier": "robustness",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "A Visit to the County Asylum",
+  "source": "The Superintendent’s report for that year, which I read in the anteroom while waiting upon him, divides the inmates into the lunatic, the imbecile, and the merely feeble, and assigns to each class a separate quarter of the house. Of the third class he writes with a kindness the age did not require of him: they are, he says, capable of labour and of affection, and want nothing but patience.\n\nThe Mahometan gardener who kept the physic beds was of the second class by the reckoning of the book, and of no class at all by the reckoning of any man who had watched him work. He had come over from Smyrna as a boy, and he spoke of the asylum as his house, and of the feeble-minded in his charge as his own people, and the Superintendent, who had written the classification himself, never once corrected him.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "the lunatic, the imbecile, and the merely feeble",
+      "label": "period-terminology-must-stay"
+    },
+    {
+      "span": "The Mahometan gardener",
+      "label": "period-terminology-must-stay"
+    },
+    {
+      "span": "the feeble-minded in his charge",
+      "label": "period-terminology-must-stay"
+    }
+  ],
+  "prepared": "The Superintendent’s report for that year, which I read in the anteroom while waiting upon him, divides the inmates into the lunatic, the imbecile, and the merely feeble, and assigns to each class a separate quarter of the house. Of the third class he writes with a kindness the age did not require of him: they are, he says, capable of labour and of affection, and want nothing but patience.\n\nThe Mahometan gardener who kept the physic beds was of the second class by the reckoning of the book, and of no class at all by the reckoning of any man who had watched him work. He had come over from Smyrna as a boy, and he spoke of the asylum as his house, and of the feeble-minded in his charge as his own people, and the Superintendent, who had written the classification himself, never once corrected him.",
+  "notes": "A nineteenth-century narrator using the clinical and religious vocabulary of his period, which a modern copy editor would itch to replace."
+}

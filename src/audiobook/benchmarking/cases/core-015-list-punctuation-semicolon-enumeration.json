@@ -1,0 +1,39 @@
+{
+  "id": "core-015-list-punctuation-semicolon-enumeration",
+  "tier": "core",
+  "categories": [
+    "list_punctuation"
+  ],
+  "chapter_title": "Three Sorts of Men",
+  "source": "The commissioners divided the parish into three sorts of men: those who owned the land they worked; those who rented it from a neighbour; those who worked it for a wage and owned nothing but the tools. The categories were tidier on paper than in any village street, where a man might rent four acres, own one, and hire himself out at harvest to the farmer whose hedge he had helped to plant. Tidiness was the point. A survey that admitted how mixed the arrangements really were would have been useless to the men who commissioned it, who wanted a number they could tax.",
+  "expect": [
+    {
+      "anchor": "worked; those",
+      "accept": [
+        "worked, those"
+      ],
+      "category": "list_punctuation",
+      "why": "A list semicolon reads as a full stop aloud."
+    },
+    {
+      "anchor": "neighbour; those",
+      "accept": [
+        "neighbour, and those"
+      ],
+      "category": "list_punctuation",
+      "why": "The last item of a spoken list needs its connector."
+    }
+  ],
+  "traps": [
+    {
+      "span": "rent four acres, own one",
+      "label": "meaningful-detail-must-stay"
+    },
+    {
+      "span": "a number they could tax",
+      "label": "claim-must-stay"
+    }
+  ],
+  "prepared": "The commissioners divided the parish into three sorts of men: those who owned the land they worked, those who rented it from a neighbour, and those who worked it for a wage and owned nothing but the tools. The categories were tidier on paper than in any village street, where a man might rent four acres, own one, and hire himself out at harvest to the farmer whose hedge he had helped to plant. Tidiness was the point. A survey that admitted how mixed the arrangements really were would have been useless to the men who commissioned it, who wanted a number they could tax.",
+  "notes": "A semicolon enumeration that a listener hears as three unfinished sentences; the final item needs an “and” that the page never printed. The anchors must carry a neighbouring word because a bare semicolon occurs twice."
+}

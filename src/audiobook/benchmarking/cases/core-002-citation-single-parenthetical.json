@@ -1,0 +1,35 @@
+{
+  "id": "core-002-citation-single-parenthetical",
+  "tier": "core",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "The Harbour Trials",
+  "source": "The Board’s minutes record a suspicion that the instrument had been tested only in harbour (Smith 1999), and the suspicion hardened once the sea trials were postponed a second time. Harrison’s supporters answered that no clock could be judged by a fortnight of rolling water, and that the Board had set a standard no mechanism then in existence could meet. What neither side would say plainly was that the prize had already been promised, in conversation if not in writing, to a method the astronomers preferred.",
+  "expect": [
+    {
+      "anchor": "(Smith 1999)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "A single author-year citation is visual sourcing with nothing to say aloud."
+    }
+  ],
+  "traps": [
+    {
+      "span": "Harrison’s supporters",
+      "label": "name-in-the-claim-must-stay"
+    },
+    {
+      "span": "a fortnight of rolling water",
+      "label": "qualification-must-stay"
+    },
+    {
+      "span": "in conversation if not in writing",
+      "label": "meaningful-aside-must-stay"
+    }
+  ],
+  "prepared": "The Board’s minutes record a suspicion that the instrument had been tested only in harbour, and the suspicion hardened once the sea trials were postponed a second time. Harrison’s supporters answered that no clock could be judged by a fortnight of rolling water, and that the Board had set a standard no mechanism then in existence could meet. What neither side would say plainly was that the prize had already been promised, in conversation if not in writing, to a method the astronomers preferred.",
+  "notes": "The simplest citation shape: one parenthetical mid-sentence, followed by a comma. A model fails by taking the surrounding clause with it, or by leaving the doubled space the deletion opens up."
+}

@@ -1,0 +1,35 @@
+{
+  "id": "core-012-visual-notation-figure-reference",
+  "tier": "core",
+  "categories": [
+    "visual_notation"
+  ],
+  "chapter_title": "The Bend in the Curve",
+  "source": "The curve rises gently until 1740 and then bends sharply upward (see Fig. 3), which is the shape that made the whole argument seem inevitable to a generation of readers. It is worth remembering how little the bend rests on. Three of the underlying series are estimates built from tax receipts, one is a reconstruction from wage books that survive for two towns, and the earliest points are frankly guesses, offered as such in a footnote and repeated ever afterwards without one.",
+  "expect": [
+    {
+      "anchor": "(see Fig. 3)",
+      "accept": [
+        ""
+      ],
+      "category": "visual_notation",
+      "why": "A pointer to a figure the listener cannot see."
+    }
+  ],
+  "traps": [
+    {
+      "span": "until 1740",
+      "label": "historical-date-must-stay"
+    },
+    {
+      "span": "two towns",
+      "label": "quantity-must-stay"
+    },
+    {
+      "span": "Three of the underlying series",
+      "label": "quantity-must-stay"
+    }
+  ],
+  "prepared": "The curve rises gently until 1740 and then bends sharply upward, which is the shape that made the whole argument seem inevitable to a generation of readers. It is worth remembering how little the bend rests on. Three of the underlying series are estimates built from tax receipts, one is a reconstruction from wage books that survive for two towns, and the earliest points are frankly guesses, offered as such in a footnote and repeated ever afterwards without one.",
+  "notes": "A cross-reference to a figure that exists only on the page. A model must remove it whole, including the abbreviating period, and must not treat the numerals elsewhere in the passage as the same kind of notation."
+}

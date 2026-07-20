@@ -1,0 +1,38 @@
+{
+  "id": "noop-011-hyphenated-compounds",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "A Committee of Well-Meaning Persons",
+  "source": "They were well-meaning people, every one of them, and that was precisely the difficulty. A self-possessed woman from the ministry chaired the meeting, took no notes at all, and produced at the end of it a two-page summary that nobody in the room recognised as an account of what had been said.\n\nThe half-finished proposals of the spring had been folded into a single strategy, and the strategy had been folded in its turn into a phrase about community-led renewal that could be read four ways and duly was. Nobody lied. Nobody had to: a well-meaning committee that never says a hard thing out loud will produce a document that says nothing hard, and then everybody can sign it, and the twelve-year-old buildings can go on falling down at their own unhurried pace.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "well-meaning people",
+      "label": "hyphenated-compound-is-not-an-extraction-artifact"
+    },
+    {
+      "span": "self-possessed",
+      "label": "hyphenated-compound-must-stay"
+    },
+    {
+      "span": "two-page summary",
+      "label": "hyphenated-compound-must-stay-two"
+    },
+    {
+      "span": "half-finished",
+      "label": "hyphenated-compound-must-stay-three"
+    },
+    {
+      "span": "community-led renewal",
+      "label": "hyphenated-compound-must-stay-four"
+    },
+    {
+      "span": "twelve-year-old buildings",
+      "label": "double-hyphenated-compound-must-stay"
+    }
+  ],
+  "prepared": "They were well-meaning people, every one of them, and that was precisely the difficulty. A self-possessed woman from the ministry chaired the meeting, took no notes at all, and produced at the end of it a two-page summary that nobody in the room recognised as an account of what had been said.\n\nThe half-finished proposals of the spring had been folded into a single strategy, and the strategy had been folded in its turn into a phrase about community-led renewal that could be read four ways and duly was. Nobody lied. Nobody had to: a well-meaning committee that never says a hard thing out loud will produce a document that says nothing hard, and then everybody can sign it, and the twelve-year-old buildings can go on falling down at their own unhurried pace.",
+  "notes": "Six legitimate hyphenated compounds in a passage that also mentions documents and summaries. A model primed to repair line-break hyphenation will join them up and call it an extraction fix."
+}

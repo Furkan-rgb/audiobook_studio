@@ -1,0 +1,43 @@
+{
+  "id": "trap-009-citation-beside-hedged-negation",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "Not Uncommon",
+  "source": "Relapse after a first remission is not uncommon, and in the older cohorts it was not merely common but expected (Aldridge and Park 1997). Clinicians who trained on those cohorts still describe the disease as relational in its course, meaning that it tracks the household rather than the patient, and they are only in part mistaken. The newer series suggest the household matters less than it did, though it has never stopped mattering, and rarely does a case resolve without some change in who the patient lives with.",
+  "expect": [
+    {
+      "anchor": "(Aldridge and Park 1997)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "An author-year parenthesis is sourcing and adds nothing when spoken."
+    }
+  ],
+  "traps": [
+    {
+      "span": "is not uncommon",
+      "label": "double-negative-must-stay"
+    },
+    {
+      "span": "not merely common but expected",
+      "label": "intensifier-must-stay"
+    },
+    {
+      "span": "relational in its course",
+      "label": "relational-must-not-become-non-relational"
+    },
+    {
+      "span": "only in part mistaken",
+      "label": "hedge-must-stay"
+    },
+    {
+      "span": "rarely does a case resolve",
+      "label": "frequency-hedge-must-stay"
+    }
+  ],
+  "prepared": "Relapse after a first remission is not uncommon, and in the older cohorts it was not merely common but expected. Clinicians who trained on those cohorts still describe the disease as relational in its course, meaning that it tracks the household rather than the patient, and they are only in part mistaken. The newer series suggest the household matters less than it did, though it has never stopped mattering, and rarely does a case resolve without some change in who the patient lives with.",
+  "notes": "This is the observed failure written down: a real citation to remove, surrounded by hedges, double negatives, and the word “relational”. A model that tidies a negation or flips a polarity while it is in there scores full lexical retention and is wrong."
+}

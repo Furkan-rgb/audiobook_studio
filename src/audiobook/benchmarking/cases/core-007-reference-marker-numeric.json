@@ -1,0 +1,31 @@
+{
+  "id": "core-007-reference-marker-numeric",
+  "tier": "core",
+  "categories": [
+    "reference_marker"
+  ],
+  "chapter_title": "The Year Without a Summer",
+  "source": "The estimate that the eruption darkened the northern sky for eighteen months[12] rests on tree rings, ice cores, and a handful of chronicles whose authors had no idea they were describing the same event. Each source is weak on its own. The rings give a year but not a season, the cores give a chemistry but not a place, and the chronicles give a vividness that historians have learned to distrust precisely because it is vivid. Together they converge, which is the only kind of proof this sort of question admits.",
+  "expect": [
+    {
+      "anchor": "[12]",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A bracketed endnote number has no spoken form."
+    }
+  ],
+  "traps": [
+    {
+      "span": "eighteen months",
+      "label": "duration-must-stay"
+    },
+    {
+      "span": "tree rings, ice cores",
+      "label": "evidence-list-must-stay"
+    }
+  ],
+  "prepared": "The estimate that the eruption darkened the northern sky for eighteen months rests on tree rings, ice cores, and a handful of chronicles whose authors had no idea they were describing the same event. Each source is weak on its own. The rings give a year but not a season, the cores give a chemistry but not a place, and the chronicles give a vividness that historians have learned to distrust precisely because it is vivid. Together they converge, which is the only kind of proof this sort of question admits.",
+  "notes": "A numeric reference marker fused to the preceding word with no space either side. The anchor is four characters and the surrounding words must be untouched; a model that anchors “months[12]” and replaces it with “months” is also right, but one that deletes the duration is not."
+}

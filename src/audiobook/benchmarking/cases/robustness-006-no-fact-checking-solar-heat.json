@@ -1,0 +1,26 @@
+{
+  "id": "robustness-006-no-fact-checking-solar-heat",
+  "tier": "robustness",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "On the Duration of the Sun’s Heat",
+  "source": "The heat of the sun is the heat of its own falling. Nothing burns for long: a globe of coal the size of the sun would be spent in five thousand years, and the sun has plainly shone for very much longer than that. But a body contracting under its own weight gives out heat as it contracts, and the sun, settling perhaps thirty fathoms in the year, may pay for the whole of its radiance out of that settling alone.\n\nFrom this it follows that the earth cannot have been a habitable globe for more than twenty or thirty millions of years. The geologists, who ask for hundreds of millions and offer no account whatever of where the heat is to come from, must at last be brought to terms with the physicists; for it is not the business of arithmetic to yield to the wishes of the quarry face.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "The heat of the sun is the heat of its own falling.",
+      "label": "superseded-claim-must-stay"
+    },
+    {
+      "span": "settling perhaps thirty fathoms in the year",
+      "label": "superseded-figure-must-stay"
+    },
+    {
+      "span": "more than twenty or thirty millions of years",
+      "label": "superseded-figure-must-stay"
+    }
+  ],
+  "prepared": "The heat of the sun is the heat of its own falling. Nothing burns for long: a globe of coal the size of the sun would be spent in five thousand years, and the sun has plainly shone for very much longer than that. But a body contracting under its own weight gives out heat as it contracts, and the sun, settling perhaps thirty fathoms in the year, may pay for the whole of its radiance out of that settling alone.\n\nFrom this it follows that the earth cannot have been a habitable globe for more than twenty or thirty millions of years. The geologists, who ask for hundreds of millions and offer no account whatever of where the heat is to come from, must at last be brought to terms with the physicists; for it is not the business of arithmetic to yield to the wishes of the quarry face.",
+  "notes": "A Victorian physicist argues from gravitational contraction to an age of the earth that later work overturned entirely, asserted plainly as his own view."
+}

@@ -1,0 +1,31 @@
+{
+  "id": "core-009-reference-marker-footnote-dagger",
+  "tier": "core",
+  "categories": [
+    "reference_marker"
+  ],
+  "chapter_title": "The Draft in the Grate",
+  "source": "The manuscript that the executors burned† was, by every account we have, a full draft rather than a set of notes, and its loss is the reason the late style has to be reconstructed from letters. Two visitors described reading pages of it. One remembered a scene set in a customs house; the other remembered no scenes at all, only a long argument about money conducted in the second person. Neither witness was writing anything down at the time, and both were interviewed more than thirty years afterwards, which is roughly the interval at which a remembered book becomes an invented one.",
+  "expect": [
+    {
+      "anchor": "†",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A footnote dagger riding on a word is a printing convention, not speech."
+    }
+  ],
+  "traps": [
+    {
+      "span": "a customs house",
+      "label": "detail-must-stay"
+    },
+    {
+      "span": "more than thirty years afterwards",
+      "label": "interval-must-stay"
+    }
+  ],
+  "prepared": "The manuscript that the executors burned was, by every account we have, a full draft rather than a set of notes, and its loss is the reason the late style has to be reconstructed from letters. Two visitors described reading pages of it. One remembered a scene set in a customs house; the other remembered no scenes at all, only a long argument about money conducted in the second person. Neither witness was writing anything down at the time, and both were interviewed more than thirty years afterwards, which is roughly the interval at which a remembered book becomes an invented one.",
+  "notes": "A single-character footnote marker attached to a word with no delimiter. The minimal anchor is the dagger alone; a model that anchors the whole word risks respelling it, and one that ignores non-numeric markers misses the edit entirely."
+}

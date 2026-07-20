@@ -1,0 +1,32 @@
+{
+  "id": "core-011-visual-notation-section-symbol",
+  "tier": "core",
+  "categories": [
+    "visual_notation"
+  ],
+  "chapter_title": "The Line on the Map",
+  "source": "Everything turned on §5, which the drafters had inserted at the last minute to placate a single delegation and which nobody expected to be read strictly. It defined the boundary by reference to a survey that had not yet been carried out, and when the survey was finally made, in the spring of 1889, it put the disputed valley on the wrong side of a line both governments had already told their newspapers they had won. The lawyers argued for a decade. The farmers, who had been told nothing, went on grazing where they had always grazed.",
+  "expect": [
+    {
+      "anchor": "§5",
+      "accept": [
+        "section 5",
+        "section five"
+      ],
+      "category": "visual_notation",
+      "why": "The section sign is printed shorthand and must be spoken."
+    }
+  ],
+  "traps": [
+    {
+      "span": "in the spring of 1889",
+      "label": "historical-date-must-stay"
+    },
+    {
+      "span": "for a decade",
+      "label": "duration-must-stay"
+    }
+  ],
+  "prepared": "Everything turned on section 5, which the drafters had inserted at the last minute to placate a single delegation and which nobody expected to be read strictly. It defined the boundary by reference to a survey that had not yet been carried out, and when the survey was finally made, in the spring of 1889, it put the disputed valley on the wrong side of a line both governments had already told their newspapers they had won. The lawyers argued for a decade. The farmers, who had been told nothing, went on grazing where they had always grazed.",
+  "notes": "A symbol that has to be said rather than removed, with two equally correct spoken forms. A model that deletes §5 loses the clause’s subject; one that leaves the glyph hands the narrator a character with no pronunciation."
+}

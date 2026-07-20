@@ -1,0 +1,35 @@
+{
+  "id": "trap-001-citation-beside-historical-year",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "The Year of the Ban",
+  "source": "In 1999, the ban took effect across every canton at once, and the shock to the dyeworks was immediate (Halloran 1999). Mills that had spent a decade lobbying against it discovered that their suppliers had already moved to the new mordants, and the collapse they had predicted cost them one indifferent season and no more. The trade journals of the following spring return again and again to the same rueful sentence, repeated in a dozen variations: the industry had argued itself into a corner it could have walked out of at any time.",
+  "expect": [
+    {
+      "anchor": "(Halloran 1999)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "An author-year parenthesis is visual sourcing and reads as noise aloud."
+    }
+  ],
+  "traps": [
+    {
+      "span": "In 1999, the ban took effect",
+      "label": "historical-year-must-stay"
+    },
+    {
+      "span": "a decade lobbying against it",
+      "label": "duration-claim-must-stay"
+    },
+    {
+      "span": "one indifferent season and no more",
+      "label": "understatement-must-stay"
+    }
+  ],
+  "prepared": "In 1999, the ban took effect across every canton at once, and the shock to the dyeworks was immediate. Mills that had spent a decade lobbying against it discovered that their suppliers had already moved to the new mordants, and the collapse they had predicted cost them one indifferent season and no more. The trade journals of the following spring return again and again to the same rueful sentence, repeated in a dozen variations: the industry had argued itself into a corner it could have walked out of at any time.",
+  "notes": "The citation year and the historical year are the same number in the same sentence. A model that deletes on the shape of a date rather than on its function takes the opening clause with it."
+}

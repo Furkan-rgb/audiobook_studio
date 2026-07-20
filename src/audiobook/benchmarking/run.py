@@ -1,651 +1,450 @@
-"""Reproducible, provider-neutral narration-preparation benchmarks."""
+"""Running every model over the same gold corpus, under production rules.
+
+The point of a benchmark is that the only thing which differs between two
+columns of the table is the model. So each case is a fresh provider request
+with no cache, no resume, and no neighbouring case to condition on, and what
+comes back is applied by the same applier production uses, with the same
+validation policy. A model is scored on the prose a listener would actually
+have heard, not on the JSON it emitted.
+
+Each variant is taken to exhaustion — every repetition of every case — before
+the next is loaded, and variants are ordered so a model and its thinking
+counterpart run back to back. On a local server, loading a model is tens of
+seconds of moving gigabytes into VRAM; interleaving models across repetitions,
+as an earlier version did, reloaded each one once per repetition and spent more
+time swapping weights than preparing text. The cost of finishing sooner is that
+timing is no longer insulated from a machine that slows over a long run — a
+model measured late looks slower than one measured early — but scores are
+unaffected, because every case is independent and the temperature is zero, and
+timing is already reported as specific to the machine.
+"""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from difflib import SequenceMatcher
-import json
 from pathlib import Path
-import re
-import statistics
-import tempfile
+import sys
 from time import perf_counter
-from typing import Any, Callable, Sequence
+from typing import Callable, Sequence, TextIO
 
-from ..extraction import parse_book_to_chapters, source_media_type
 from ..preparation import (
-    NarrationPreparationPipeline,
+    DEFAULT_OLLAMA_BASE_URL,
+    DEFAULT_POLICY,
     NarrationPreparationProvider,
+    PreparationEdit,
     PreparationRequest,
-    PreparationResult,
-    PreparedBook,
-    SourceMetadata,
+    ValidationPolicy,
+    apply_edits,
     create_provider,
-    mask_citations,
-    save_prepared_book,
-    save_prepared_markdown,
-    source_metadata_for_path,
     validate_preparation,
+)
+from .corpus import BenchmarkCase, load_corpus
+from .plots import write_plots
+from .report import (
+    BENCHMARK_SCHEMA_VERSION,
+    BenchmarkReport,
+    CaseRun,
+    ModelReport,
+    ProtocolTotals,
+    utc_now,
+    write_report,
+)
+from .scoring import (
+    breakdowns,
+    determinism,
+    edit_signature,
+    score_case,
+    summarize,
+    trap_failures,
 )
 
 
-BENCHMARK_SCHEMA_VERSION = 1
 DEFAULT_BENCHMARK_MODELS = (
     "gemma4:12b",
     "gemma4:26b",
     "gemma4:31b",
 )
 
+ProviderFactory = Callable[..., NarrationPreparationProvider]
+
 
 @dataclass(frozen=True)
 class BenchmarkOptions:
     """Configuration shared by every model in one preparation benchmark."""
 
-    source_path: Path
     output_dir: Path
     provider_name: str
     models: tuple[str, ...]
     base_url: str
     timeout_seconds: float
-    preview_chapters: int = 1
-    preview_units: int = 1
     repetitions: int = 1
+    corpus_dir: Path | None = None
+    tiers: tuple[str, ...] = ()
+    categories: tuple[str, ...] = ()
+    case_ids: tuple[str, ...] = ()
+    quick: bool = False
+    # Each model is scored once per think mode, so ``(False, True)`` compares a
+    # model with and without reasoning as two separately ranked entries. The
+    # default keeps thinking off, which is how the pipeline runs in production.
+    think_modes: tuple[bool, ...] = (False,)
+    # Models the provider says cannot think, so the thinking run is skipped for
+    # them rather than filed as forty-eight identical provider errors.
+    no_think_models: tuple[str, ...] = ()
+    appendix_limit: int = 8
+    validation_policy: ValidationPolicy = field(default_factory=ValidationPolicy)
 
     def __post_init__(self) -> None:
-        cleaned_models = tuple(model.strip() for model in self.models if model.strip())
-        if not cleaned_models:
+        cleaned = tuple(model.strip() for model in self.models if model.strip())
+        if not cleaned:
             raise ValueError("At least one benchmark model is required")
-        if len(set(cleaned_models)) != len(cleaned_models):
+        if len(set(cleaned)) != len(cleaned):
             raise ValueError("Benchmark model names must be unique")
-        if cleaned_models != self.models:
-            object.__setattr__(self, "models", cleaned_models)
+        if cleaned != self.models:
+            object.__setattr__(self, "models", cleaned)
+        modes = tuple(dict.fromkeys(bool(mode) for mode in self.think_modes))
+        if not modes:
+            raise ValueError("At least one think mode is required")
+        if modes != self.think_modes:
+            object.__setattr__(self, "think_modes", modes)
         if not self.provider_name.strip():
             raise ValueError("Benchmark provider cannot be blank")
         if self.timeout_seconds <= 0:
             raise ValueError("Benchmark provider timeout must be positive")
-        if self.preview_chapters <= 0:
-            raise ValueError("Benchmark chapter count must be positive")
-        if self.preview_units <= 0:
-            raise ValueError("Benchmark unit count must be positive")
         if self.repetitions <= 0:
             raise ValueError("Benchmark repetitions must be positive")
-
-
-@dataclass
-class QualityMetrics:
-    """Automatic preservation indicators; human review remains authoritative."""
-
-    source_chars: int = 0
-    prepared_chars: int = 0
-    prose_units: int = 0
-    lexical_retention: float | None = None
-    minimum_unit_retention: float | None = None
-    expansion_ratio: float | None = None
-    source_similarity: float | None = None
-    citation_target_similarity: float | None = None
-    citation_shaped_chars_before: int = 0
-    citation_shaped_chars_after: int = 0
-    citation_reduction: float | None = None
-    paragraph_boundaries_preserved: bool = True
-    edit_count: int = 0
-    warning_count: int = 0
-
-
-@dataclass
-class ModelRunResult:
-    """One isolated provider/model/repetition result."""
-
-    model: str
-    repetition: int
-    success: bool
-    wall_seconds: float
-    provider_seconds: float
-    provider_calls: int
-    artifact_path: str | None = None
-    markdown_path: str | None = None
-    prepared_sha256: str | None = None
-    quality: QualityMetrics | None = None
-    error: str | None = None
-    prepared_text: str = field(default="", repr=False)
-
-    def to_dict(self) -> dict[str, Any]:
-        payload = asdict(self)
-        payload.pop("prepared_text", None)
-        return payload
-
-
-@dataclass
-class ModelSummary:
-    model: str
-    successful_runs: int
-    total_runs: int
-    mean_wall_seconds: float | None
-    minimum_wall_seconds: float | None
-    mean_provider_seconds: float | None
-    mean_lexical_retention: float | None
-    minimum_unit_retention: float | None
-    mean_source_similarity: float | None
-    mean_citation_target_similarity: float | None
-    mean_citation_reduction: float | None
-    paragraph_boundaries_preserved: bool | None
-    mean_edit_count: float | None
-    mean_warning_count: float | None
-    consistency: float | None
-
-
-@dataclass
-class PairwiseComparison:
-    first_model: str
-    second_model: str
-    output_similarity: float
-    character_delta: int
-
-
-@dataclass
-class BenchmarkReport:
-    """Machine-readable benchmark result with human-review report paths."""
-
-    created_at: str
-    source: SourceMetadata
-    options: BenchmarkOptions
-    selected_chapters: list[str]
-    runs: list[ModelRunResult]
-    summaries: list[ModelSummary]
-    comparisons: list[PairwiseComparison]
-    json_path: Path
-    markdown_path: Path
-    schema_version: int = BENCHMARK_SCHEMA_VERSION
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "schema_version": self.schema_version,
-            "created_at": self.created_at,
-            "source": self.source.to_dict(),
-            "configuration": {
-                "source_path": str(self.options.source_path),
-                "output_dir": str(self.options.output_dir),
-                "provider": self.options.provider_name,
-                "models": list(self.options.models),
-                "base_url": self.options.base_url,
-                "timeout_seconds": self.options.timeout_seconds,
-                "preview_chapters": self.options.preview_chapters,
-                "preview_units": self.options.preview_units,
-                "repetitions": self.options.repetitions,
-                "cache_reuse": False,
-            },
-            "selected_chapters": self.selected_chapters,
-            "model_summaries": [asdict(summary) for summary in self.summaries],
-            "pairwise_comparisons": [
-                asdict(comparison) for comparison in self.comparisons
-            ],
-            "runs": [run.to_dict() for run in self.runs],
-        }
-
-
-ProviderFactory = Callable[..., NarrationPreparationProvider]
-
-
-class _TimedProvider:
-    """Protocol-preserving wrapper that measures only provider preparation calls."""
-
-    def __init__(self, provider: NarrationPreparationProvider) -> None:
-        self.provider = provider
-        self.call_seconds: list[float] = []
+        if self.appendix_limit < 0:
+            raise ValueError("Benchmark appendix limit cannot be negative")
 
     @property
-    def metadata(self):
-        return self.provider.metadata
+    def variants(self) -> tuple["BenchmarkVariant", ...]:
+        """The (model, think) pairs a run scores, each with a display label.
 
-    def check_available(self) -> None:
-        self.provider.check_available()
+        Thinking is folded into the label rather than a separate column so the
+        rest of the report — leaderboard, breakdowns, appendix — treats a model
+        and its thinking counterpart as two independent competitors, which is
+        exactly what a with/without comparison wants.
+        """
 
-    def prepare(self, request: PreparationRequest) -> PreparationResult:
-        started = perf_counter()
-        try:
-            return self.provider.prepare(request)
-        finally:
-            self.call_seconds.append(perf_counter() - started)
-
-    def close(self) -> None:
-        self.provider.close()
-
-
-def _safe_component(value: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("._-")
-    return cleaned or "model"
-
-
-def _book_title(path: Path) -> str:
-    title = re.sub(r"[_-]+", " ", path.stem).strip()
-    return title.title() or "Audiobook Benchmark"
-
-
-def _citation_shaped_chars(text: str) -> int:
-    return max(0, len(text) - len(mask_citations(text)))
-
-
-def _comparison_text(text: str) -> str:
-    return " ".join(text.split())
-
-
-def _quality_metrics(book: PreparedBook) -> QualityMetrics:
-    prose_units = [
-        (chapter.title, unit)
-        for chapter in book.chapters
-        for unit in chapter.units
-        if unit.kind == "prose"
-    ]
-    reports = []
-    for chapter_title, unit in prose_units:
-        reports.append(
-            validate_preparation(unit.source_text, unit.prepared_text)
-        )
-
-    source_text = "\n\n".join(unit.source_text for _title, unit in prose_units)
-    prepared_text = "\n\n".join(
-        unit.prepared_text for _title, unit in prose_units
-    )
-    source_tokens = sum(report.source_token_count for report in reports)
-    retained_weighted = sum(
-        report.lexical_retention * report.source_token_count for report in reports
-    )
-    citation_before = _citation_shaped_chars(source_text)
-    citation_after = _citation_shaped_chars(prepared_text)
-    source_masked_length = len(mask_citations(source_text).strip())
-    prepared_masked_length = len(mask_citations(prepared_text).strip())
-    return QualityMetrics(
-        source_chars=len(source_text),
-        prepared_chars=len(prepared_text),
-        prose_units=len(prose_units),
-        lexical_retention=(
-            retained_weighted / source_tokens if source_tokens else 1.0
-        ),
-        minimum_unit_retention=(
-            min(report.lexical_retention for report in reports) if reports else 1.0
-        ),
-        expansion_ratio=prepared_masked_length / max(1, source_masked_length),
-        source_similarity=SequenceMatcher(
-            None, source_text, prepared_text, autojunk=False
-        ).ratio(),
-        citation_target_similarity=SequenceMatcher(
-            None,
-            _comparison_text(mask_citations(source_text)),
-            _comparison_text(prepared_text),
-            autojunk=False,
-        ).ratio(),
-        citation_shaped_chars_before=citation_before,
-        citation_shaped_chars_after=citation_after,
-        citation_reduction=(
-            1.0 - (citation_after / citation_before) if citation_before else None
-        ),
-        paragraph_boundaries_preserved=all(
-            unit.source_text.count("\n\n") == unit.prepared_text.count("\n\n")
-            for _title, unit in prose_units
-        ),
-        edit_count=sum(len(unit.edits) for _title, unit in prose_units),
-        warning_count=sum(len(unit.warnings) for _title, unit in prose_units),
-    )
-
-
-def _mean(values: Sequence[float]) -> float | None:
-    return statistics.fmean(values) if values else None
-
-
-def _summarize_model(model: str, runs: Sequence[ModelRunResult]) -> ModelSummary:
-    successful = [run for run in runs if run.success and run.quality is not None]
-    quality = [run.quality for run in successful if run.quality is not None]
-    citation_values = [
-        item.citation_reduction
-        for item in quality
-        if item.citation_reduction is not None
-    ]
-    baseline = successful[0].prepared_text if successful else ""
-    consistency_values = [
-        SequenceMatcher(None, baseline, run.prepared_text, autojunk=False).ratio()
-        for run in successful[1:]
-    ]
-    return ModelSummary(
-        model=model,
-        successful_runs=len(successful),
-        total_runs=len(runs),
-        mean_wall_seconds=_mean([run.wall_seconds for run in successful]),
-        minimum_wall_seconds=(
-            min(run.wall_seconds for run in successful) if successful else None
-        ),
-        mean_provider_seconds=_mean(
-            [run.provider_seconds for run in successful]
-        ),
-        mean_lexical_retention=_mean(
-            [item.lexical_retention for item in quality if item.lexical_retention is not None]
-        ),
-        minimum_unit_retention=(
-            min(
-                item.minimum_unit_retention
-                for item in quality
-                if item.minimum_unit_retention is not None
-            )
-            if quality
-            else None
-        ),
-        mean_source_similarity=_mean(
-            [item.source_similarity for item in quality if item.source_similarity is not None]
-        ),
-        mean_citation_target_similarity=_mean(
-            [
-                item.citation_target_similarity
-                for item in quality
-                if item.citation_target_similarity is not None
-            ]
-        ),
-        mean_citation_reduction=_mean(citation_values),
-        paragraph_boundaries_preserved=(
-            all(item.paragraph_boundaries_preserved for item in quality)
-            if quality
-            else None
-        ),
-        mean_edit_count=_mean([float(item.edit_count) for item in quality]),
-        mean_warning_count=_mean([float(item.warning_count) for item in quality]),
-        consistency=(
-            _mean(consistency_values)
-            if consistency_values
-            else (1.0 if len(successful) == 1 else None)
-        ),
-    )
-
-
-def _pairwise_comparisons(
-    models: Sequence[str], runs: Sequence[ModelRunResult]
-) -> list[PairwiseComparison]:
-    first_success = {
-        model: next(
-            (run for run in runs if run.model == model and run.success),
-            None,
-        )
-        for model in models
-    }
-    comparisons: list[PairwiseComparison] = []
-    for first_index, first_model in enumerate(models):
-        first = first_success[first_model]
-        if first is None:
-            continue
-        for second_model in models[first_index + 1 :]:
-            second = first_success[second_model]
-            if second is None:
-                continue
-            comparisons.append(
-                PairwiseComparison(
-                    first_model=first_model,
-                    second_model=second_model,
-                    output_similarity=SequenceMatcher(
-                        None,
-                        first.prepared_text,
-                        second.prepared_text,
-                        autojunk=False,
-                    ).ratio(),
-                    character_delta=len(second.prepared_text) - len(first.prepared_text),
+        blocked = set(self.no_think_models)
+        result: list[BenchmarkVariant] = []
+        for model in self.models:
+            modes = self.think_modes
+            if model in blocked:
+                modes = tuple(mode for mode in modes if not mode)
+            for think in modes:
+                result.append(
+                    BenchmarkVariant(
+                        label=f"{model} +think" if think else model,
+                        model=model,
+                        think=think,
+                    )
                 )
-            )
-    return comparisons
+        return tuple(result)
 
 
-def _format_seconds(value: float | None) -> str:
-    return "—" if value is None else f"{value:.2f}"
+@dataclass(frozen=True)
+class BenchmarkVariant:
+    """One competitor in a run: a model, a think mode, and the label they share."""
+
+    label: str
+    model: str
+    think: bool
 
 
-def _format_percent(value: float | None) -> str:
-    return "—" if value is None else f"{value:.1%}"
+class _Attempt:
+    """One provider call and everything the pipeline made of it."""
+
+    def __init__(self) -> None:
+        self.proposed: list[PreparationEdit] = []
+        self.applied: list[PreparationEdit] = []
+        self.warnings: list[str] = []
+        self.prepared: str = ""
+        self.error: str | None = None
 
 
-def _markdown_link(path: str | None, root: Path) -> str:
-    if path is None:
-        return "—"
-    destination = Path(path)
-    try:
-        display = destination.relative_to(root)
-    except ValueError:
-        display = destination
-    return f"[{display}]({display.as_posix()})"
+def _attempt(
+    provider: NarrationPreparationProvider,
+    case: BenchmarkCase,
+    policy: ValidationPolicy,
+) -> _Attempt:
+    """Prepare one case exactly as production would, capturing every stage.
 
+    A failure anywhere — a provider that times out, a response that will not
+    parse, an applied result that validation rejects — is recorded against the
+    case and the run continues. One difficult passage must not decide a model
+    comparison by ending it early.
+    """
 
-def _render_markdown(report: BenchmarkReport) -> str:
-    lines = [
-        "# Narration preparation benchmark",
-        "",
-        f"- Provider: `{report.options.provider_name}`",
-        f"- Source: `{report.options.source_path}`",
-        f"- Chapters sampled: {report.options.preview_chapters}",
-        f"- Prose units sampled: {report.options.preview_units}",
-        f"- Repetitions per model: {report.options.repetitions}",
-        "- Cache reuse: disabled",
-        "",
-        "## Model summary",
-        "",
-        "| Model | Successful | Mean wall (s) | Provider (s) | Lexical retention | Citation-target similarity | Citation-shape reduction | Paragraphs | Consistency |",
-        "|---|---:|---:|---:|---:|---:|---:|:---:|---:|",
-    ]
-    for summary in report.summaries:
-        lines.append(
-            "| "
-            + " | ".join(
-                [
-                    f"`{summary.model.replace('|', '\\|')}`",
-                    f"{summary.successful_runs}/{summary.total_runs}",
-                    _format_seconds(summary.mean_wall_seconds),
-                    _format_seconds(summary.mean_provider_seconds),
-                    _format_percent(summary.mean_lexical_retention),
-                    _format_percent(summary.mean_citation_target_similarity),
-                    _format_percent(summary.mean_citation_reduction),
-                    (
-                        "yes"
-                        if summary.paragraph_boundaries_preserved is True
-                        else "no"
-                        if summary.paragraph_boundaries_preserved is False
-                        else "—"
-                    ),
-                    _format_percent(summary.consistency),
-                ]
-            )
-            + " |"
-        )
-
-    if report.comparisons:
-        lines.extend(
-            [
-                "",
-                "## Pairwise prepared-text comparison",
-                "",
-                "| First | Second | Output similarity | Character delta |",
-                "|---|---|---:|---:|",
-            ]
-        )
-        for comparison in report.comparisons:
-            lines.append(
-                f"| `{comparison.first_model}` | `{comparison.second_model}` | "
-                f"{comparison.output_similarity:.1%} | "
-                f"{comparison.character_delta:+d} |"
-            )
-
-    lines.extend(["", "## Runs", ""])
-    for run in report.runs:
-        status = "passed" if run.success else "failed"
-        lines.extend(
-            [
-                f"### {run.model} — run {run.repetition} ({status})",
-                "",
-                f"- Wall time: {run.wall_seconds:.2f} seconds",
-                f"- Provider calls: {run.provider_calls} in "
-                f"{run.provider_seconds:.2f} seconds",
-            ]
-        )
-        if run.success and run.quality is not None:
-            lines.extend(
-                [
-                    f"- Lexical retention: {_format_percent(run.quality.lexical_retention)}",
-                    f"- Minimum unit retention: {_format_percent(run.quality.minimum_unit_retention)}",
-                    f"- Source similarity: {_format_percent(run.quality.source_similarity)}",
-                    f"- Citation-stripped target similarity: "
-                    f"{_format_percent(run.quality.citation_target_similarity)}",
-                    f"- Citation-shaped characters: "
-                    f"{run.quality.citation_shaped_chars_before} → "
-                    f"{run.quality.citation_shaped_chars_after}",
-                    f"- Reported edits/warnings: {run.quality.edit_count}/"
-                    f"{run.quality.warning_count}",
-                    f"- Prepared JSON: {_markdown_link(run.artifact_path, report.options.output_dir)}",
-                    f"- Reading copy: {_markdown_link(run.markdown_path, report.options.output_dir)}",
-                ]
-            )
-        else:
-            lines.append(f"- Error: `{run.error or 'unknown error'}`")
-        lines.append("")
-
-    lines.extend(
-        [
-            "## Interpretation",
-            "",
-            "Automatic metrics detect obvious deletion, expansion, citation retention, "
-            "format drift, and inconsistent output. They do not prove semantic fidelity. "
-            "Review the reading copies, especially names, dates, quotations, and "
-            "parenthetical qualifications, before changing the production default.",
-            "",
-        ]
+    attempt = _Attempt()
+    request = PreparationRequest(
+        unit_id=case.id,
+        chapter_title=case.chapter_title,
+        source_text=case.source,
+        previous_context=case.previous_context,
+        following_context=case.following_context,
+        prompt_version=provider.metadata.prompt_version,
+        policy=DEFAULT_POLICY,
     )
-    return "\n".join(lines)
-
-
-def _atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
     try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as handle:
-            temporary = Path(handle.name)
-            handle.write(content)
-        temporary.replace(path)
-    except BaseException:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
-        raise
+        result = provider.prepare(request)
+        attempt.proposed = list(result.edits)
+        prepared, applied, refusals = apply_edits(
+            case.source, list(result.edits), policy=policy
+        )
+        attempt.applied = applied
+        attempt.warnings = [*result.warnings, *refusals]
+        validate_preparation(case.source, prepared, policy=policy)
+        attempt.prepared = prepared.strip()
+    except Exception as exc:
+        attempt.error = f"{type(exc).__name__}: {exc}"
+    return attempt
+
+
+def _model_report(model: str, runs: Sequence[CaseRun]) -> ModelReport:
+    scores = [run.score for run in runs]
+    protocol = ProtocolTotals()
+    for score in scores:
+        protocol.proposed += score.protocol.proposed
+        protocol.applied += score.protocol.applied
+        protocol.unanchored += score.protocol.unanchored
+        protocol.ambiguous += score.protocol.ambiguous
+        protocol.oversized += score.protocol.oversized
+        protocol.label_only += score.protocol.label_only
+        protocol.refused += score.protocol.refused
+
+    by_case: dict[str, list[CaseRun]] = {}
+    for run in runs:
+        by_case.setdefault(run.case_id, []).append(run)
+    agreements = [
+        value
+        for value in (
+            determinism([edit_signature(run.proposed) for run in group])
+            for group in by_case.values()
+        )
+        if value is not None
+    ]
+
+    seconds = [run.seconds for run in runs]
+    return ModelReport(
+        model=model,
+        overall=summarize(model, scores),
+        by_tier=breakdowns(scores, "tier"),
+        by_category=breakdowns(scores, "category"),
+        protocol=protocol,
+        trap_failures=trap_failures(scores),
+        determinism=(sum(agreements) / len(agreements) if agreements else None),
+        mean_seconds=(sum(seconds) / len(seconds) if seconds else 0.0),
+        total_seconds=sum(seconds),
+        errored_cases=sum(1 for score in scores if score.error is not None),
+        runs=list(runs),
+    )
 
 
 def benchmark_preparation(
     options: BenchmarkOptions,
     *,
     provider_factory: ProviderFactory = create_provider,
-    chapters: Sequence[tuple[str, str]] | None = None,
-    source_metadata: SourceMetadata | None = None,
+    cases: Sequence[BenchmarkCase] | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> BenchmarkReport:
-    """Run identical source units through every configured model and report results."""
+    """Score every configured model against the gold corpus and write a report."""
 
-    selected = (
-        list(chapters)
-        if chapters is not None
-        else parse_book_to_chapters(options.source_path)
+    selected = list(cases) if cases is not None else load_corpus(
+        options.corpus_dir,
+        tiers=options.tiers or None,
+        categories=options.categories or None,
+        ids=options.case_ids or None,
+        limit_per_tier=3 if options.quick else None,
     )
-    selected = selected[: options.preview_chapters]
     if not selected:
-        raise RuntimeError("No chapters were available for the benchmark")
-    source = source_metadata or source_metadata_for_path(
-        options.source_path, media_type=source_media_type(options.source_path)
-    )
+        raise RuntimeError("No benchmark cases were available")
     options.output_dir.mkdir(parents=True, exist_ok=True)
-    runs: list[ModelRunResult] = []
 
-    # Round-robin repetitions avoid giving one model every adjacent warm-cache
-    # run before the next model is loaded.
-    for repetition in range(1, options.repetitions + 1):
-        for model_index, model in enumerate(options.models, start=1):
-            model_dir = options.output_dir / (
-                f"{model_index:02d}_{_safe_component(model)}"
+    variants = options.variants
+    runs: list[CaseRun] = []
+    total = len(selected) * len(variants) * options.repetitions
+    if progress is not None:
+        progress(0, total)
+
+    for variant in variants:
+        provider: NarrationPreparationProvider | None = None
+        setup_error: str | None = None
+        try:
+            provider = provider_factory(
+                options.provider_name,
+                model=variant.model,
+                base_url=options.base_url,
+                timeout=options.timeout_seconds,
+                think=variant.think,
             )
-            run_dir = model_dir / f"run_{repetition:02d}"
-            artifact_path = run_dir / "prepared_book.json"
-            markdown_path = run_dir / "prepared_book.md"
-            provider: NarrationPreparationProvider | None = None
-            timed: _TimedProvider | None = None
-            book: PreparedBook | None = None
-            error: str | None = None
-            started = perf_counter()
-            try:
-                provider = provider_factory(
-                    options.provider_name,
-                    model=model,
-                    base_url=options.base_url,
-                    timeout=options.timeout_seconds,
-                )
-                timed = _TimedProvider(provider)
-                pipeline = NarrationPreparationPipeline(timed)
+            provider.check_available()
+        except Exception as exc:
+            setup_error = f"{type(exc).__name__}: {exc}"
 
-                def checkpoint(current: PreparedBook) -> None:
-                    save_prepared_book(current, artifact_path)
-                    save_prepared_markdown(current, markdown_path)
-
-                book = pipeline.prepare_book(
-                    selected,
-                    book_title=_book_title(options.source_path),
-                    source_metadata=source,
-                    checkpoint=checkpoint,
-                    max_prose_units=options.preview_units,
-                )
-                checkpoint(book)
-            except Exception as exc:  # Continue so one model cannot hide the others.
-                error = f"{type(exc).__name__}: {exc}"
-            finally:
+        try:
+            for repetition in range(1, options.repetitions + 1):
+                for case in selected:
+                    started = perf_counter()
+                    if provider is None or setup_error is not None:
+                        attempt = _Attempt()
+                        attempt.error = setup_error or "provider was not created"
+                    else:
+                        attempt = _attempt(
+                            provider, case, options.validation_policy
+                        )
+                    elapsed = perf_counter() - started
+                    score = score_case(
+                        case,
+                        attempt.prepared or case.source,
+                        proposed=attempt.proposed,
+                        applied=attempt.applied,
+                        warnings=attempt.warnings,
+                        error=attempt.error,
+                    )
+                    runs.append(
+                        CaseRun(
+                            case_id=case.id,
+                            model=variant.label,
+                            repetition=repetition,
+                            seconds=elapsed,
+                            score=score,
+                            proposed=list(attempt.proposed),
+                        )
+                    )
+                    if progress is not None:
+                        progress(len(runs), total)
+        finally:
+            if provider is not None:
                 try:
-                    if timed is not None:
-                        timed.close()
-                    elif provider is not None:
-                        provider.close()
-                except Exception as exc:
-                    if error is None:
-                        error = f"{type(exc).__name__} during provider close: {exc}"
-            wall_seconds = perf_counter() - started
-            success = book is not None and error is None
-            runs.append(
-                ModelRunResult(
-                    model=model,
-                    repetition=repetition,
-                    success=success,
-                    wall_seconds=wall_seconds,
-                    provider_seconds=sum(timed.call_seconds) if timed else 0.0,
-                    provider_calls=len(timed.call_seconds) if timed else 0,
-                    artifact_path=str(artifact_path) if success else None,
-                    markdown_path=str(markdown_path) if success else None,
-                    prepared_sha256=book.prepared_sha256 if success and book else None,
-                    quality=_quality_metrics(book) if success and book else None,
-                    error=error,
-                    prepared_text=book.prepared_text if success and book else "",
-                )
-            )
+                    provider.close()
+                except Exception:
+                    # A provider that will not shut down cleanly has already
+                    # given us its answers; losing them here helps nobody.
+                    pass
 
-    summaries = [
-        _summarize_model(model, [run for run in runs if run.model == model])
-        for model in options.models
-    ]
-    comparisons = _pairwise_comparisons(options.models, runs)
+    tier_counts: dict[str, int] = {}
+    for case in selected:
+        tier_counts[case.tier] = tier_counts.get(case.tier, 0) + 1
+
     report = BenchmarkReport(
-        created_at=datetime.now(timezone.utc).isoformat(),
-        source=source,
-        options=options,
-        selected_chapters=[title for title, _text in selected],
+        created_at=utc_now(),
+        provider_name=options.provider_name,
+        models=[variant.label for variant in variants],
+        repetitions=options.repetitions,
+        corpus_size=len(selected),
+        corpus_tiers=tier_counts,
+        models_reports=[
+            _model_report(
+                variant.label, [run for run in runs if run.model == variant.label]
+            )
+            for variant in variants
+        ],
         runs=runs,
-        summaries=summaries,
-        comparisons=comparisons,
         json_path=options.output_dir / "benchmark.json",
         markdown_path=options.output_dir / "comparison.md",
     )
-    _atomic_write(
-        report.json_path,
-        json.dumps(report.to_dict(), ensure_ascii=False, indent=2, allow_nan=False)
-        + "\n",
+    write_report(report, appendix_limit=options.appendix_limit)
+    try:
+        report.plot_paths = write_plots(report, options.output_dir / "plots")
+    except Exception:
+        # The run's numbers are already on disk; a plotting failure must not be
+        # allowed to discard a benchmark that may have taken hours to produce.
+        report.plot_paths = []
+    return report
+
+
+def benchmark_progress(done: int, total: int) -> None:
+    """One rewritten line of progress: a full benchmark is long and mostly silent."""
+
+    print(f"\rBenchmarking case {done}/{total}", end="", file=sys.stderr, flush=True)
+
+
+def default_output_dir(base: Path = Path("output")) -> Path:
+    """A timestamped run directory under ``<base>/benchmarks/``."""
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return base / "benchmarks" / timestamp
+
+
+def print_summary(report: BenchmarkReport, *, file: TextIO | None = None) -> None:
+    """Print the artifact paths and the ranked leaderboard for a finished run.
+
+    Shared by the CLI and the driver script so both report a run identically;
+    the errored-case warning always goes to stderr regardless of ``file``.
+    """
+
+    out = file if file is not None else sys.stdout
+    print(f"\nBenchmark JSON: {report.json_path}", file=out)
+    print(f"Comparison report: {report.markdown_path}", file=out)
+    if report.plot_paths:
+        print(f"Plots: {report.plot_paths[0].parent}", file=out)
+    print(file=out)
+    width = max((len(item.model) for item in report.models_reports), default=0)
+    for item in report.ranked:
+        overall = item.overall
+        print(
+            f"  {item.model:<{width}}  score {overall.score:.3f}   "
+            f"passed {overall.passed}/{overall.cases}   "
+            f"fidelity failures {overall.fidelity_failures}",
+            file=out,
+        )
+    errored = sum(item.errored_cases for item in report.models_reports)
+    if errored:
+        print(
+            f"\nWarning: {errored} of {len(report.runs)} case runs errored; "
+            "see the report for details.",
+            file=sys.stderr,
+        )
+
+
+def run(
+    *,
+    models: Sequence[str] = DEFAULT_BENCHMARK_MODELS,
+    think_modes: Sequence[bool] = (False,),
+    repetitions: int = 1,
+    provider: str = "ollama",
+    base_url: str = DEFAULT_OLLAMA_BASE_URL,
+    timeout: float = 300.0,
+    tiers: Sequence[str] = (),
+    categories: Sequence[str] = (),
+    case_ids: Sequence[str] = (),
+    quick: bool = False,
+    no_think_models: Sequence[str] = (),
+    output_dir: Path | str | None = None,
+    provider_factory: ProviderFactory = create_provider,
+    cases: Sequence[BenchmarkCase] | None = None,
+    progress: Callable[[int, int], None] | None = benchmark_progress,
+    show_summary: bool = True,
+) -> BenchmarkReport:
+    """Build options from plain values, score every model, and write the report.
+
+    The file-first way to run a benchmark: a driver script sets the arguments
+    as ordinary Python and calls this, instead of assembling a
+    :class:`BenchmarkOptions` and threading a progress callback by hand. It is a
+    thin convenience over :func:`benchmark_preparation`, which remains the seam
+    the tests drive.
+    """
+
+    options = BenchmarkOptions(
+        output_dir=Path(output_dir) if output_dir is not None else default_output_dir(),
+        provider_name=provider,
+        models=tuple(models),
+        base_url=base_url,
+        timeout_seconds=timeout,
+        repetitions=repetitions,
+        tiers=tuple(tiers),
+        categories=tuple(categories),
+        case_ids=tuple(case_ids),
+        quick=quick,
+        think_modes=tuple(think_modes),
+        no_think_models=tuple(no_think_models),
     )
-    _atomic_write(report.markdown_path, _render_markdown(report))
+    report = benchmark_preparation(
+        options, provider_factory=provider_factory, cases=cases, progress=progress
+    )
+    if show_summary:
+        print_summary(report)
     return report
 
 
@@ -654,7 +453,12 @@ __all__ = [
     "DEFAULT_BENCHMARK_MODELS",
     "BenchmarkOptions",
     "BenchmarkReport",
-    "ModelRunResult",
-    "QualityMetrics",
+    "BenchmarkVariant",
+    "CaseRun",
+    "ModelReport",
     "benchmark_preparation",
+    "benchmark_progress",
+    "default_output_dir",
+    "print_summary",
+    "run",
 ]

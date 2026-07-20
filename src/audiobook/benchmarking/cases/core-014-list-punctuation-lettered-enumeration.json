@@ -1,0 +1,54 @@
+{
+  "id": "core-014-list-punctuation-lettered-enumeration",
+  "tier": "core",
+  "categories": [
+    "list_punctuation"
+  ],
+  "chapter_title": "Three Parts of an Objection",
+  "source": "His objection had three parts: (a) that the evidence was drawn entirely from one country; (b) that the effect vanished when the wealthiest households were excluded; and (c) that the author had not reported how many models were tried before this one was published. Only the third was answered, and it was answered badly, in a reply that conceded the practice while denying that it mattered here.\n\nThe first two objections are still, forty years on, the standard reasons the finding is taught as a caution rather than a result.",
+  "expect": [
+    {
+      "anchor": "(a)",
+      "accept": [
+        "first,",
+        "first"
+      ],
+      "category": "list_punctuation",
+      "why": "A lettered list label needs a spoken ordinal."
+    },
+    {
+      "anchor": "(b)",
+      "accept": [
+        "second,",
+        "second"
+      ],
+      "category": "list_punctuation",
+      "why": "The second label in the same enumeration."
+    },
+    {
+      "anchor": "(c)",
+      "accept": [
+        "third,",
+        "third"
+      ],
+      "category": "list_punctuation",
+      "why": "The third label in the same enumeration."
+    }
+  ],
+  "traps": [
+    {
+      "span": "the wealthiest households were excluded",
+      "label": "claim-must-stay"
+    },
+    {
+      "span": "forty years on",
+      "label": "interval-must-stay"
+    },
+    {
+      "span": "Only the third was answered",
+      "label": "claim-must-stay"
+    }
+  ],
+  "prepared": "His objection had three parts: first, that the evidence was drawn entirely from one country; second, that the effect vanished when the wealthiest households were excluded; and third, that the author had not reported how many models were tried before this one was published. Only the third was answered, and it was answered badly, in a reply that conceded the practice while denying that it mattered here.\n\nThe first two objections are still, forty years on, the standard reasons the finding is taught as a caution rather than a result.",
+  "notes": "An inline lettered enumeration where each label needs its own small edit into a spoken ordinal. A model that deletes the labels leaves three clauses running together, and one that rewrites the whole sentence into a list is refused as a rewrite."
+}

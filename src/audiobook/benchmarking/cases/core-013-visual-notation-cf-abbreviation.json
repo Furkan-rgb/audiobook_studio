@@ -1,0 +1,36 @@
+{
+  "id": "core-013-visual-notation-cf-abbreviation",
+  "tier": "core",
+  "categories": [
+    "visual_notation"
+  ],
+  "chapter_title": "The Western Parishes",
+  "source": "The clustering is sharpest in the western parishes; cf. the Devon returns, where the same pattern appears a generation later and with half the amplitude. Nobody has a satisfying account of the delay. The obvious candidates—roads, markets, the age at which women married—all move in the right direction and none of them moves far enough, which suggests either a cause nobody has thought of or, more likely, four small causes nobody can measure separately.",
+  "expect": [
+    {
+      "anchor": "cf.",
+      "accept": [
+        "compare",
+        "compare with"
+      ],
+      "category": "visual_notation",
+      "why": "A printed abbreviation that is never said aloud as written."
+    }
+  ],
+  "traps": [
+    {
+      "span": "half the amplitude",
+      "label": "quantifier-must-stay"
+    },
+    {
+      "span": "roads, markets, the age at which women married",
+      "label": "meaningful-aside-must-stay"
+    },
+    {
+      "span": "a generation later",
+      "label": "interval-must-stay"
+    }
+  ],
+  "prepared": "The clustering is sharpest in the western parishes; compare the Devon returns, where the same pattern appears a generation later and with half the amplitude. Nobody has a satisfying account of the delay. The obvious candidates—roads, markets, the age at which women married—all move in the right direction and none of them moves far enough, which suggests either a cause nobody has thought of or, more likely, four small causes nobody can measure separately.",
+  "notes": "A Latin abbreviation that must be expanded rather than deleted, since the clause it introduces depends on it. A model that removes “cf.” outright leaves a bare noun phrase hanging off a semicolon."
+}

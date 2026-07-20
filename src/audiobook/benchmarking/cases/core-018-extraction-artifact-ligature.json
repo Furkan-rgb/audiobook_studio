@@ -1,0 +1,43 @@
+{
+  "id": "core-018-extraction-artifact-ligature",
+  "tier": "core",
+  "categories": [
+    "extraction_artifact"
+  ],
+  "chapter_title": "Twelve Seconds",
+  "source": "The ﬁrst powered ﬂight lasted twelve seconds and covered a distance shorter than the wingspan of the aircraft that carried the news photographers to Kitty Hawk sixty years later. Nobody of consequence was watching. The five witnesses were lifesavers from the station down the beach, and the telegram sent that evening misspelled the surname of the man who had been lying on the wing.\n\nWhat the machine proved was not that flying was possible—balloons had settled that—but that a heavier-than-air craft could be controlled in three axes by a pilot who was part of the mechanism.",
+  "expect": [
+    {
+      "anchor": "ﬁrst",
+      "accept": [
+        "first"
+      ],
+      "category": "extraction_artifact",
+      "why": "A typographic ligature the extractor carried through as a single glyph."
+    },
+    {
+      "anchor": "ﬂight",
+      "accept": [
+        "flight"
+      ],
+      "category": "extraction_artifact",
+      "why": "A second ligature glyph in the same clause."
+    }
+  ],
+  "traps": [
+    {
+      "span": "twelve seconds",
+      "label": "figure-must-stay"
+    },
+    {
+      "span": "The five witnesses",
+      "label": "figure-must-stay"
+    },
+    {
+      "span": "Kitty Hawk sixty years later",
+      "label": "historical-detail-must-stay"
+    }
+  ],
+  "prepared": "The first powered flight lasted twelve seconds and covered a distance shorter than the wingspan of the aircraft that carried the news photographers to Kitty Hawk sixty years later. Nobody of consequence was watching. The five witnesses were lifesavers from the station down the beach, and the telegram sent that evening misspelled the surname of the man who had been lying on the wing.\n\nWhat the machine proved was not that flying was possible—balloons had settled that—but that a heavier-than-air craft could be controlled in three axes by a pilot who was part of the mechanism.",
+  "notes": "Two ligature glyphs that look like ordinary words on screen but are single characters a narrator’s voice model may mispronounce or drop. A model that does not inspect the characters reports no edits and scores zero on the case."
+}

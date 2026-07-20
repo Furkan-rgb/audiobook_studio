@@ -1,0 +1,30 @@
+{
+  "id": "noop-002-interior-monologue-em-dash",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "What the Ferry Carried",
+  "source": "She had rehearsed the sentence the whole way across the water — three sentences, really, though only one of them mattered — and now, with the gangway rattling under her feet, she could not recall which of the three she had settled on. The harbour smelled of diesel and wet rope. Her father would be waiting at the far end of the shed in the coat he had worn for eleven winters, and he would say her name in the flat way that meant he had been worrying since breakfast.\n\nSay it plainly, she told herself. Say it before the greeting, before the bags, before he can ask about the crossing — say it while the boat is still close enough behind her to serve as an excuse. And then the ramp gave way to concrete and there he was, smaller than the version of him she had been carrying around, lifting one hand, and what she said was, “The crossing was fine …” and she let him take the case out of her fingers.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "— three sentences, really, though only one of them mattered —",
+      "label": "em-dash-aside-must-stay"
+    },
+    {
+      "span": "“The crossing was fine …”",
+      "label": "ellipsis-is-authorial-pacing"
+    },
+    {
+      "span": "eleven winters",
+      "label": "spelled-number-must-stay"
+    },
+    {
+      "span": "Say it plainly, she told herself.",
+      "label": "unquoted-interior-speech-needs-no-marks"
+    }
+  ],
+  "prepared": "She had rehearsed the sentence the whole way across the water — three sentences, really, though only one of them mattered — and now, with the gangway rattling under her feet, she could not recall which of the three she had settled on. The harbour smelled of diesel and wet rope. Her father would be waiting at the far end of the shed in the coat he had worn for eleven winters, and he would say her name in the flat way that meant he had been worrying since breakfast.\n\nSay it plainly, she told herself. Say it before the greeting, before the bags, before he can ask about the crossing — say it while the boat is still close enough behind her to serve as an excuse. And then the ramp gave way to concrete and there he was, smaller than the version of him she had been carrying around, lifting one hand, and what she said was, “The crossing was fine …” and she let him take the case out of her fingers.",
+  "notes": "Em dashes used as parenthetical asides and a trailing ellipsis inside dialogue both look like typographic debris. Both are the author's pacing and must be narrated as written."
+}

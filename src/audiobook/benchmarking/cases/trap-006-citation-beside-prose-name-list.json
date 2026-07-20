@@ -1,0 +1,35 @@
+{
+  "id": "trap-006-citation-beside-prose-name-list",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "The Signatories",
+  "source": "Kessler, Ivanova, Ntuli, and the younger Beaumont signed the memorandum within the same week, and not one of them ever explained why (Rasmussen 2004). They had disagreed in public for years about very nearly everything the document asserted, and the alliance dissolved within four months of the signing. What survives is the memorandum itself, four names at the foot of it, and a correspondence that circles the question for two hundred pages without once putting it.",
+  "expect": [
+    {
+      "anchor": "(Rasmussen 2004)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "An author-year parenthesis is sourcing rather than narration."
+    }
+  ],
+  "traps": [
+    {
+      "span": "Kessler, Ivanova, Ntuli, and the younger Beaumont",
+      "label": "prose-name-list-must-stay"
+    },
+    {
+      "span": "four names at the foot of it",
+      "label": "count-must-stay"
+    },
+    {
+      "span": "without once putting it",
+      "label": "closing-clause-must-stay"
+    }
+  ],
+  "prepared": "Kessler, Ivanova, Ntuli, and the younger Beaumont signed the memorandum within the same week, and not one of them ever explained why. They had disagreed in public for years about very nearly everything the document asserted, and the alliance dissolved within four months of the signing. What survives is the memorandum itself, four names at the foot of it, and a correspondence that circles the question for two hundred pages without once putting it.",
+  "notes": "A comma-separated run of surnames opens the sentence as its subject, and a genuine author-year citation closes it. A model that treats any list of names as a bibliography deletes the people the sentence is about."
+}

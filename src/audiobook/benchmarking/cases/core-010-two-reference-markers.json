@@ -1,0 +1,43 @@
+{
+  "id": "core-010-two-reference-markers",
+  "tier": "core",
+  "categories": [
+    "reference_marker"
+  ],
+  "chapter_title": "Boiled for Storage",
+  "source": "The claim that the deficiency was dietary rather than infectious[7] took thirty years to become obvious, and for most of those years the two explanations were held simultaneously by the same people. Ships’ surgeons knew that citrus worked. They also knew that it sometimes did not work, because the juice had been boiled for storage and the boiling destroyed exactly what the juice was carried for[14].\n\nA remedy that fails half the time is worse than no remedy at all, since it discredits itself and takes the observation that produced it down with it.",
+  "expect": [
+    {
+      "anchor": "[7]",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A bracketed endnote number mid-sentence."
+    },
+    {
+      "anchor": "[14]",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A second endnote number, this one before the full stop."
+    }
+  ],
+  "traps": [
+    {
+      "span": "took thirty years",
+      "label": "duration-must-stay"
+    },
+    {
+      "span": "citrus worked",
+      "label": "claim-must-stay"
+    },
+    {
+      "span": "half the time",
+      "label": "quantifier-must-stay"
+    }
+  ],
+  "prepared": "The claim that the deficiency was dietary rather than infectious took thirty years to become obvious, and for most of those years the two explanations were held simultaneously by the same people. Ships’ surgeons knew that citrus worked. They also knew that it sometimes did not work, because the juice had been boiled for storage and the boiling destroyed exactly what the juice was carried for.\n\nA remedy that fails half the time is worse than no remedy at all, since it discredits itself and takes the observation that produced it down with it.",
+  "notes": "Two numeric markers in one passage, one mid-sentence and one hard against a full stop, so the two whitespace seams differ. A model that finds only the first, or that merges them into one edit, is scored short."
+}

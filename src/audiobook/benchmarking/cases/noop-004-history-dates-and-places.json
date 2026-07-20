@@ -1,0 +1,34 @@
+{
+  "id": "noop-004-history-dates-and-places",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The Winter Road",
+  "source": "The garrison at Vyborg held until March 1940, and the terms signed that month moved the border west of the Karelian Isthmus, taking with it the second city of the republic and the farms of some four hundred thousand people. They were resettled inland, in Ostrobothnia and around Kuopio, on land that was already spoken for, and the resentment of that redistribution outlasted almost everyone who had felt it first. When the fighting resumed in the summer of 1941 a great many of them went straight back, put in one crop in the old fields, and were evacuated a second time in 1944 — the same roads, the same carts, and by then nobody under any illusion that the arrangement was temporary. What is remembered in those families is not the treaty. It is the hour of the morning the carts left.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "March 1940",
+      "label": "historical-date-is-the-claim"
+    },
+    {
+      "span": "the Karelian Isthmus",
+      "label": "place-name-must-stay"
+    },
+    {
+      "span": "Ostrobothnia and around Kuopio",
+      "label": "place-names-must-stay"
+    },
+    {
+      "span": "some four hundred thousand people",
+      "label": "figure-must-stay"
+    },
+    {
+      "span": "in 1944",
+      "label": "historical-year-must-stay"
+    }
+  ],
+  "prepared": "The garrison at Vyborg held until March 1940, and the terms signed that month moved the border west of the Karelian Isthmus, taking with it the second city of the republic and the farms of some four hundred thousand people. They were resettled inland, in Ostrobothnia and around Kuopio, on land that was already spoken for, and the resentment of that redistribution outlasted almost everyone who had felt it first. When the fighting resumed in the summer of 1941 a great many of them went straight back, put in one crop in the old fields, and were evacuated a second time in 1944 — the same roads, the same carts, and by then nobody under any illusion that the arrangement was temporary. What is remembered in those families is not the treaty. It is the hour of the morning the carts left.",
+  "notes": "Dense with bare years and place names, which is exactly the surface pattern of an author-year citation. Here every one of them is the substance of the historical claim."
+}

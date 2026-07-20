@@ -1,0 +1,31 @@
+{
+  "id": "core-008-reference-marker-range",
+  "tier": "core",
+  "categories": [
+    "reference_marker"
+  ],
+  "chapter_title": "A Theory of Balance",
+  "source": "Contemporary manuals recommended bleeding, blistering, and a diet of thin gruel[3-5], and the physicians who followed them were neither stupid nor careless. They were reasoning from a theory of balance that had survived seventeen centuries of testing by men as observant as themselves, and the theory explained a great deal: why fevers broke, why the young recovered and the old did not, why a patient bled at the nose and then improved. What it could not explain, it absorbed. That is the property of a theory that has stopped being a hypothesis and become a way of seeing.",
+  "expect": [
+    {
+      "anchor": "[3-5]",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A bracketed range of endnote numbers is visual sourcing."
+    }
+  ],
+  "traps": [
+    {
+      "span": "seventeen centuries of testing",
+      "label": "claim-must-stay"
+    },
+    {
+      "span": "why a patient bled at the nose",
+      "label": "example-must-stay"
+    }
+  ],
+  "prepared": "Contemporary manuals recommended bleeding, blistering, and a diet of thin gruel, and the physicians who followed them were neither stupid nor careless. They were reasoning from a theory of balance that had survived seventeen centuries of testing by men as observant as themselves, and the theory explained a great deal: why fevers broke, why the young recovered and the old did not, why a patient bled at the nose and then improved. What it could not explain, it absorbed. That is the property of a theory that has stopped being a hypothesis and become a way of seeing.",
+  "notes": "A range marker whose internal hyphen invites a model to read it as a compound word or a date span. The comma that follows must survive, so the deletion has to close up without swallowing it."
+}

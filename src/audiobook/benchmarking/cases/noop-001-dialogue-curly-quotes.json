@@ -1,0 +1,30 @@
+{
+  "id": "noop-001-dialogue-curly-quotes",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "The Long Table",
+  "source": "“You could have told me,” she said, setting the kettle down harder than she had intended. “Any evening this spring. Any evening at all, and I would have listened.”\n\n“I did try,” Marcus said from the doorway, where he had been standing long enough for the hall light to click off behind him. “Twice. You were counting the linen both times, and I thought it could keep.”\n\n“Linen keeps. Brothers do not.” She turned the tap on and then off again, for no reason she could have defended. “How long has he been ill?”\n\n“Since Lent, I think. He wouldn’t say the word for it, and after a while I stopped asking him to.”",
+  "expect": [],
+  "traps": [
+    {
+      "span": "“You could have told me,”",
+      "label": "dialogue-quotation-marks-must-stay"
+    },
+    {
+      "span": "“Linen keeps. Brothers do not.”",
+      "label": "short-dialogue-line-must-stay"
+    },
+    {
+      "span": "wouldn’t",
+      "label": "curly-apostrophe-must-stay"
+    },
+    {
+      "span": "for no reason she could have defended",
+      "label": "narration-must-survive-verbatim"
+    }
+  ],
+  "prepared": "“You could have told me,” she said, setting the kettle down harder than she had intended. “Any evening this spring. Any evening at all, and I would have listened.”\n\n“I did try,” Marcus said from the doorway, where he had been standing long enough for the hall light to click off behind him. “Twice. You were counting the linen both times, and I thought it could keep.”\n\n“Linen keeps. Brothers do not.” She turned the tap on and then off again, for no reason she could have defended. “How long has he been ill?”\n\n“Since Lent, I think. He wouldn’t say the word for it, and after a while I stopped asking him to.”",
+  "notes": "Four paragraphs of nothing but quoted speech. A model that has learned to strip “visual notation” will reach for the curly quotation marks, which the prompt explicitly protects."
+}

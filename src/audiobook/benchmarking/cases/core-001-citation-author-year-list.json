@@ -1,0 +1,31 @@
+{
+  "id": "core-001-citation-author-year-list",
+  "tier": "core",
+  "categories": ["bibliographic_citation"],
+  "chapter_title": "The Committee Years",
+  "source": "The revision of the diagnostic manual (Spitzer et al. 1974, Bayer 1981) followed seven years of committee dispute, and the compromise it produced satisfied almost nobody who had argued for it. Delegates who had entered the process convinced that the category was a clinical necessity left describing it as a political artefact. The vote itself was held in 1973, and the wording adopted that December survived, with minor amendment, for the better part of two decades.",
+  "expect": [
+    {
+      "anchor": "(Spitzer et al. 1974, Bayer 1981)",
+      "accept": [""],
+      "category": "bibliographic_citation",
+      "why": "An author-year list is visual sourcing and reads as noise aloud."
+    }
+  ],
+  "traps": [
+    {
+      "span": "seven years of committee dispute",
+      "label": "qualification-must-stay"
+    },
+    {
+      "span": "held in 1973",
+      "label": "historical-year-must-stay"
+    },
+    {
+      "span": "that December",
+      "label": "historical-date-must-stay"
+    }
+  ],
+  "prepared": "The revision of the diagnostic manual followed seven years of committee dispute, and the compromise it produced satisfied almost nobody who had argued for it. Delegates who had entered the process convinced that the category was a clinical necessity left describing it as a political artefact. The vote itself was held in 1973, and the wording adopted that December survived, with minor amendment, for the better part of two decades.",
+  "notes": "The canonical case: one parenthetical author-year list to remove, sitting in a paragraph whose other years and dates are load-bearing historical claims. A model that deletes every four-digit number fails the traps rather than the edit."
+}

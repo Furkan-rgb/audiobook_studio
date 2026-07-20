@@ -1,0 +1,35 @@
+{
+  "id": "trap-008-figure-reference-beside-description",
+  "tier": "trap",
+  "categories": [
+    "visual_notation"
+  ],
+  "chapter_title": "The Shape of the Curve",
+  "source": "The curve rises steeply through the first eleven years and then flattens almost to the horizontal (see Fig. 4). That flattening is the whole of the argument: whatever the intervention accomplished, it accomplished in the first decade, and the long shallow tail that follows records nothing but the cohort growing older. Anyone who has held the shape of it in mind will notice that the same bend appears in every regional series as well, which is a good deal harder to explain away than a single national one.",
+  "expect": [
+    {
+      "anchor": "(see Fig. 4)",
+      "accept": [
+        ""
+      ],
+      "category": "visual_notation",
+      "why": "A cross-reference to a numbered figure points at nothing a listener has."
+    }
+  ],
+  "traps": [
+    {
+      "span": "rises steeply through the first eleven years and then flattens almost to the horizontal",
+      "label": "figure-description-must-stay"
+    },
+    {
+      "span": "the long shallow tail that follows records nothing but the cohort growing older",
+      "label": "argument-from-the-figure-must-stay"
+    },
+    {
+      "span": "the same bend appears in every regional series",
+      "label": "corroborating-claim-must-stay"
+    }
+  ],
+  "prepared": "The curve rises steeply through the first eleven years and then flattens almost to the horizontal. That flattening is the whole of the argument: whatever the intervention accomplished, it accomplished in the first decade, and the long shallow tail that follows records nothing but the cohort growing older. Anyone who has held the shape of it in mind will notice that the same bend appears in every regional series as well, which is a good deal harder to explain away than a single national one.",
+  "notes": "The pointer to the figure is disposable; the prose description of that same figure is the argument. A model that removes figure talk wholesale takes the sentence that carries the finding."
+}

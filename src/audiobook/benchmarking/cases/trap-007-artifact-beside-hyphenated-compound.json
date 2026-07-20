@@ -1,0 +1,35 @@
+{
+  "id": "trap-007-artifact-beside-hyphenated-compound",
+  "tier": "trap",
+  "categories": [
+    "extraction_artifact"
+  ],
+  "chapter_title": "On Firm Ground",
+  "source": "The claim is self-evident, we are assured, and therefore stands in no need of defence; it is obvious only to a reader who has already granted the premise on which it rests. That premise is in turn described as well-founded, and its foundation, when one finally arrives at it, turns out to be the claim. The circle is an old one and per fectly visible, and the tradition’s long habit of admiring its symmetry rather than stepping out of it deserves more attention than it has ever received.",
+  "expect": [
+    {
+      "anchor": "per fectly",
+      "accept": [
+        "perfectly"
+      ],
+      "category": "extraction_artifact",
+      "why": "A word split by the extractor would be narrated as two nonsense words."
+    }
+  ],
+  "traps": [
+    {
+      "span": "self-evident",
+      "label": "self-evident-hyphen-must-stay"
+    },
+    {
+      "span": "well-founded",
+      "label": "well-founded-hyphen-must-stay"
+    },
+    {
+      "span": "in no need of defence",
+      "label": "idiom-must-stay"
+    }
+  ],
+  "prepared": "The claim is self-evident, we are assured, and therefore stands in no need of defence; it is obvious only to a reader who has already granted the premise on which it rests. That premise is in turn described as well-founded, and its foundation, when one finally arrives at it, turns out to be the claim. The circle is an old one and perfectly visible, and the tradition’s long habit of admiring its symmetry rather than stepping out of it deserves more attention than it has ever received.",
+  "notes": "One genuinely broken word to rejoin, in a paragraph whose two hyphenated compounds are correctly hyphenated. A model that generalises the repair joins “selfevident” or “wellfounded” and invents words the author never wrote."
+}

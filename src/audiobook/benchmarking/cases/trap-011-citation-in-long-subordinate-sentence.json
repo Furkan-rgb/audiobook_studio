@@ -1,0 +1,35 @@
+{
+  "id": "trap-011-citation-in-long-subordinate-sentence",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "Eleven Volumes",
+  "source": "The commission’s final report, which ran to eleven volumes and arrived four years late on the desk of a government that had by then lost all interest in the question it had itself asked, concluded that the drownings could have been prevented at a cost the Treasury had twice refused to authorise (Marchetti et al. 1996). Nobody resigned. The volumes were printed in an edition of three hundred, distributed to libraries that had not asked for them, and consulted, so far as the borrowing records show, eleven times in the decade that followed.",
+  "expect": [
+    {
+      "anchor": "(Marchetti et al. 1996)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "An et-al. author-year citation is sourcing rather than narration."
+    }
+  ],
+  "traps": [
+    {
+      "span": "which ran to eleven volumes and arrived four years late on the desk of a government that had by then lost all interest in the question it had itself asked",
+      "label": "subordinate-clause-must-stay"
+    },
+    {
+      "span": "at a cost the Treasury had twice refused to authorise",
+      "label": "cost-qualification-must-stay"
+    },
+    {
+      "span": "so far as the borrowing records show",
+      "label": "parenthetical-hedge-must-stay"
+    }
+  ],
+  "prepared": "The commission’s final report, which ran to eleven volumes and arrived four years late on the desk of a government that had by then lost all interest in the question it had itself asked, concluded that the drownings could have been prevented at a cost the Treasury had twice refused to authorise. Nobody resigned. The volumes were printed in an edition of three hundred, distributed to libraries that had not asked for them, and consulted, so far as the borrowing records show, eleven times in the decade that followed.",
+  "notes": "A sixty-word sentence with a real citation at the end of it. A model that reads “listenable” as “shorter” trims the subordinate clause, which is where every fact in the sentence lives."
+}

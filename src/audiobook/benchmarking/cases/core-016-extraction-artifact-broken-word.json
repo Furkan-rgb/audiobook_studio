@@ -1,0 +1,31 @@
+{
+  "id": "core-016-extraction-artifact-broken-word",
+  "tier": "core",
+  "categories": [
+    "extraction_artifact"
+  ],
+  "chapter_title": "The Druggist and the Dying Wife",
+  "source": "The stages were built from interviews with a single cohort of boys, and it took two decades for that fact to become a standard criticism rather than a footnote. Kohl-berg’s interviews are better than their reputation: the boys were asked about a druggist, a dying wife, and a drug the husband could not afford, and their answers were transcribed in full rather than scored on the spot.\n\nWhat the scoring did afterwards, and what it assumed about the direction development runs in, is where the argument properly belongs.",
+  "expect": [
+    {
+      "anchor": "Kohl-berg",
+      "accept": [
+        "Kohlberg"
+      ],
+      "category": "extraction_artifact",
+      "why": "A hyphen left behind where the extractor broke a name across a line."
+    }
+  ],
+  "traps": [
+    {
+      "span": "a druggist, a dying wife",
+      "label": "substantive-list-must-stay"
+    },
+    {
+      "span": "two decades",
+      "label": "interval-must-stay"
+    }
+  ],
+  "prepared": "The stages were built from interviews with a single cohort of boys, and it took two decades for that fact to become a standard criticism rather than a footnote. Kohlberg’s interviews are better than their reputation: the boys were asked about a druggist, a dying wife, and a drug the husband could not afford, and their answers were transcribed in full rather than scored on the spot.\n\nWhat the scoring did afterwards, and what it assumed about the direction development runs in, is where the argument properly belongs.",
+  "notes": "A proper name split by a line-break hyphen the extractor failed to close. The repair is unambiguous and must leave the possessive intact; a model that anchors “Kohl-berg’s” and retypes the curly apostrophe risks an unmatchable original."
+}

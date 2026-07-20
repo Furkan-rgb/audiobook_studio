@@ -1,0 +1,35 @@
+{
+  "id": "core-006-citation-narrative-year-only",
+  "tier": "core",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "A Stranger with a Notebook",
+  "source": "Kinsey (1948) reported figures that his own interviewers found hard to believe, and the arithmetic behind them has been argued over ever since. The sample was not random, the volunteers were not typical, and whole populations—prisoners, hustlers, the men who answered advertisements—were counted in proportions no census would recognise. None of that made the interviews worthless. It made them a record of what a particular set of Americans was prepared to say aloud to a stranger with a notebook, in a decade when saying it aloud was itself the remarkable act.",
+  "expect": [
+    {
+      "anchor": "(1948)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "The name is the sentence’s subject; only the parenthetical year is apparatus."
+    }
+  ],
+  "traps": [
+    {
+      "span": "Kinsey",
+      "label": "subject-name-must-stay"
+    },
+    {
+      "span": "prisoners, hustlers, the men who answered advertisements",
+      "label": "meaningful-aside-must-stay"
+    },
+    {
+      "span": "The sample was not random",
+      "label": "claim-must-stay"
+    }
+  ],
+  "prepared": "Kinsey reported figures that his own interviewers found hard to believe, and the arithmetic behind them has been argued over ever since. The sample was not random, the volunteers were not typical, and whole populations—prisoners, hustlers, the men who answered advertisements—were counted in proportions no census would recognise. None of that made the interviews worthless. It made them a record of what a particular set of Americans was prepared to say aloud to a stranger with a notebook, in a decade when saying it aloud was itself the remarkable act.",
+  "notes": "A narrative citation where the author’s name is the grammatical subject and cannot go with the year. A model that deletes “Kinsey (1948)” wholesale destroys the sentence; one that leaves the parentheses reads “nineteen forty-eight” aloud mid-clause."
+}

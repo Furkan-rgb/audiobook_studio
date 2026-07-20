@@ -1,0 +1,35 @@
+{
+  "id": "trap-010-citation-beside-direct-quotation",
+  "tier": "trap",
+  "categories": [
+    "bibliographic_citation"
+  ],
+  "chapter_title": "In Her Own Words",
+  "source": "Wollaston put the point more bluntly than her allies cared for: “A right that may be suspended at the convenience of the men who granted it was never a right at all” (Wollaston 1911), and her editors softened that sentence in every reprint issued after her death. The softened version is the one that reached the anthologies, so that a whole generation grew up quoting her as having said something careful and conditional. The manuscript, when it surfaced at last in a Kentish attic, said what she had said.",
+  "expect": [
+    {
+      "anchor": "(Wollaston 1911)",
+      "accept": [
+        ""
+      ],
+      "category": "bibliographic_citation",
+      "why": "The source note after a quotation is visual attribution only."
+    }
+  ],
+  "traps": [
+    {
+      "span": "“A right that may be suspended at the convenience of the men who granted it was never a right at all”",
+      "label": "quotation-wording-and-quote-marks-must-stay"
+    },
+    {
+      "span": "something careful and conditional",
+      "label": "characterisation-must-stay"
+    },
+    {
+      "span": "said what she had said",
+      "label": "closing-cadence-must-stay"
+    }
+  ],
+  "prepared": "Wollaston put the point more bluntly than her allies cared for: “A right that may be suspended at the convenience of the men who granted it was never a right at all”, and her editors softened that sentence in every reprint issued after her death. The softened version is the one that reached the anthologies, so that a whole generation grew up quoting her as having said something careful and conditional. The manuscript, when it surfaced at last in a Kentish attic, said what she had said.",
+  "notes": "The citation sits immediately after a closing curly quote. A model that reaches one character too far takes the quotation mark with the parenthesis, or decides the quotation itself is the citation."
+}

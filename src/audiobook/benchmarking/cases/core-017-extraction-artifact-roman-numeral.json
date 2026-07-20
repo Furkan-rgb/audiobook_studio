@@ -1,0 +1,35 @@
+{
+  "id": "core-017-extraction-artifact-roman-numeral",
+  "tier": "core",
+  "categories": [
+    "extraction_artifact"
+  ],
+  "chapter_title": "A Skill or a Procedure",
+  "source": "The second edition, DSM-11, ran to 134 pages and cost three dollars and fifty cents, and its brevity was not modesty but confidence: a clinician who had trained in the tradition was expected to recognise a condition the way a birdwatcher recognises a bird. The third edition ran to nearly five hundred pages of explicit criteria, and the difference between the two volumes is the whole history of the profession’s argument with itself about whether diagnosis is a skill or a procedure.",
+  "expect": [
+    {
+      "anchor": "DSM-11",
+      "accept": [
+        "DSM-II"
+      ],
+      "category": "extraction_artifact",
+      "why": "Roman numerals misread as digits by the extractor."
+    }
+  ],
+  "traps": [
+    {
+      "span": "134 pages",
+      "label": "figure-must-stay"
+    },
+    {
+      "span": "three dollars and fifty cents",
+      "label": "figure-must-stay"
+    },
+    {
+      "span": "nearly five hundred pages",
+      "label": "figure-must-stay"
+    }
+  ],
+  "prepared": "The second edition, DSM-II, ran to 134 pages and cost three dollars and fifty cents, and its brevity was not modesty but confidence: a clinician who had trained in the tradition was expected to recognise a condition the way a birdwatcher recognises a bird. The third edition ran to nearly five hundred pages of explicit criteria, and the difference between the two volumes is the whole history of the profession’s argument with itself about whether diagnosis is a skill or a procedure.",
+  "notes": "An OCR confusion between Roman “II” and the digits “11”, sitting in a sentence full of genuine numbers that must survive untouched. A model that normalises every number in sight fails the traps."
+}

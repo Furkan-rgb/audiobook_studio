@@ -130,37 +130,65 @@ chunking, and TTS do not depend on Ollama response types.
 
 ## Preparation-model benchmark
 
-The manually reviewed results that informed the current 12B default are
-recorded in
+Preparation models are scored against a **gold corpus**: 48 short passages,
+committed under [`src/audiobook/benchmarking/cases/`](src/audiobook/benchmarking/cases/),
+each carrying the exact edits it needs and the exact text those edits produce.
+Because a provider only ever proposes edits, a prepared passage is the source
+with a few spans spliced and nothing else touched, so the benchmark can recover
+which changes a model actually made and check each one against the known answer.
+That is what a reference-free metric cannot do — a model that quietly turned
+"relational" into "non-relational" once scored 99.7% lexical retention here,
+indistinguishable from the model that got everything right. The methodology and
+the corpus design are described in
 [`docs/preparation-model-benchmarks.md`](docs/preparation-model-benchmarks.md).
 
-Compare the default Gemma variants on exactly the same normalized prose unit:
+Score the default Gemma variants against the whole corpus:
 
 ```bash
 .venv/bin/audiobook benchmark \
-  --book book.epub \
   --models gemma4:12b gemma4:26b gemma4:31b \
-  --preview-chapters 1 \
-  --preview-units 1
+  --repetitions 2
 ```
 
-Every model and repetition runs without preparation-cache reuse and is unloaded
-afterward. The benchmark writes a timestamped directory under
-`output/benchmarks/` containing:
+Prefer editing a Python file to remembering flags? [`run_benchmark.py`](run_benchmark.py)
+at the repo root sets the models, think modes, and repetitions as plain values
+at the top; edit it and run `.venv/bin/python run_benchmark.py`. It calls the
+same runner as the CLI — `run()` in
+[`benchmarking/run.py`](src/audiobook/benchmarking/run.py) — so results are
+identical.
 
-- `comparison.md`, the human-review report;
-- `benchmark.json`, machine-readable metrics and configuration;
-- isolated `prepared_book.md` and `prepared_book.json` artifacts for every run.
+Each case is a fresh provider request with no cache and no resume, applied by
+the same applier and validation policy production uses, so the only thing that
+differs between two columns of the table is the model. The benchmark writes a
+timestamped directory under `output/benchmarks/` containing:
 
-Reported indicators include wall and provider time, lexical retention, minimum
-unit retention, source similarity, similarity to a citation-stripped listening
-target, citation-shaped character reduction,
-paragraph-boundary preservation, edits, warnings, cross-model similarity, and
-repeat consistency. These indicators catch obvious failures but do not replace
-human review of names, dates, quotations, qualifications, and intended citation
-removals.
+- `comparison.md`, a leaderboard with per-tier and per-category breakdowns and a
+  failure appendix that shows every wrong change as a diff against the gold text;
+- `benchmark.json`, the full machine-readable result including every proposed
+  edit;
+- `plots/` — `scores.svg` (the composite-score ranking, with fidelity failures
+  flagged in red), `by-tier.svg`, and `speed.svg`, drawn as dependency-free SVG.
 
-Use `--repetitions 3` when measuring consistency or timing. Any future model
+The corpus is organised into four tiers: **core** (real citations, markers,
+notation, and extraction artifacts to fix), **noop** (clean prose whose correct
+answer is to change nothing), **trap** (a legitimate edit sitting next to a
+historical date, hedge, or quotation that must survive), and **robustness**
+(prompt injection, summarization bait, and material a faithful narrator must not
+soften, modernize, or fact-check). Models are ranked by **fidelity failures**
+first — any unrequested change to the author's words fails a case outright — and
+then by a composite of recall, precision, and exactness. The score never buys
+back a changed word with extra coverage.
+
+Add `--think both` to score each model twice — once direct, once with reasoning
+enabled — as two separately ranked entries (`gemma4:12b` and `gemma4:12b
++think`), so the with/without-thinking comparison is one table; `--think on`
+runs thinking only. Models the provider reports as unable to think are skipped
+for the thinking pass rather than filed as errors. A thinking run is far slower
+per case, so the extra context and output budget it needs is applied
+automatically.
+
+Narrow a run with `--tier`, `--category`, or `--case`; use `--quick` for a
+balanced three-per-tier smoke test while wiring up a provider. Any future model
 identifier can be supplied through `--models`; future provider adapters use the
 same command with `--provider` and the provider-specific model identifiers.
 
@@ -289,7 +317,12 @@ src/audiobook/
 │   ├── library.py                # voice/script/output enumeration
 │   └── runtime.py                # single GPU slot and log streaming
 ├── benchmarking/
-│   └── preparation.py            # model timing, quality metrics, reports
+│   ├── run.py                    # the runner: BenchmarkOptions and run()
+│   ├── corpus.py                # gold cases, anchoring, and per-case linting
+│   ├── scoring.py              # fidelity gate, recall/precision/exactness
+│   ├── report.py               # comparison.md and benchmark.json
+│   ├── plots.py                # dependency-free SVG charts
+│   └── cases/*.json            # the 48-case gold corpus
 ├── extraction/
 │   ├── __init__.py               # backend chosen by file extension
 │   ├── text.py                   # cleanup shared by every backend

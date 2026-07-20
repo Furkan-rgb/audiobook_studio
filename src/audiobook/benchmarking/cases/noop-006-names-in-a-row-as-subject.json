@@ -1,0 +1,30 @@
+{
+  "id": "noop-006-names-in-a-row-as-subject",
+  "tier": "noop",
+  "categories": [
+    "no_edit"
+  ],
+  "chapter_title": "Who Was in the Room",
+  "source": "The signatures on the founding letter belonged to Halvorsen, Achebe, Lindqvist, Moreau and Tanaka, and not one of them had met more than two of the others before that week. Halvorsen had run a shipping office and understood money; Achebe had taught constitutional law and understood what money could not buy; Lindqvist wanted the whole arrangement dissolved within five years and said so at every session, in writing, until the others stopped minuting it.\n\nMoreau and Tanaka, who between them did most of the drafting, agreed on almost nothing except that the document ought to be short enough to be read aloud in a single sitting. The names are worth keeping straight, because the compromises in the final text are not abstract. Each one is the shape of an argument between two people who still had to work together on the Monday.",
+  "expect": [],
+  "traps": [
+    {
+      "span": "Halvorsen, Achebe, Lindqvist, Moreau and Tanaka",
+      "label": "name-list-is-the-subject-not-a-bibliography"
+    },
+    {
+      "span": "Moreau and Tanaka, who between them did most of the drafting",
+      "label": "names-carry-the-claim"
+    },
+    {
+      "span": "within five years",
+      "label": "figure-must-stay"
+    },
+    {
+      "span": "read aloud in a single sitting",
+      "label": "prose-must-survive-verbatim"
+    }
+  ],
+  "prepared": "The signatures on the founding letter belonged to Halvorsen, Achebe, Lindqvist, Moreau and Tanaka, and not one of them had met more than two of the others before that week. Halvorsen had run a shipping office and understood money; Achebe had taught constitutional law and understood what money could not buy; Lindqvist wanted the whole arrangement dissolved within five years and said so at every session, in writing, until the others stopped minuting it.\n\nMoreau and Tanaka, who between them did most of the drafting, agreed on almost nothing except that the document ought to be short enough to be read aloud in a single sitting. The names are worth keeping straight, because the compromises in the final text are not abstract. Each one is the shape of an argument between two people who still had to work together on the Monday.",
+  "notes": "A run of surnames separated by commas is the visual signature of a reference list, and here it is the grammatical subject of the passage. Deleting it destroys the paragraph."
+}

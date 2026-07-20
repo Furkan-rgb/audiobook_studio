@@ -11,6 +11,7 @@ from .ollama import (
     DEFAULT_OLLAMA_BASE_URL,
     DEFAULT_OLLAMA_MODEL,
     OllamaProvider,
+    fetch_model_capabilities,
 )
 from .registry import (
     ProviderFactory,
@@ -35,6 +36,7 @@ __all__ = [
     "ProviderUnavailableError",
     "available_providers",
     "create_provider",
+    "fetch_model_capabilities",
     "provider_descriptor",
     "provider_descriptors",
     "register_provider",
