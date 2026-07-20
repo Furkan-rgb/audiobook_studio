@@ -93,7 +93,7 @@ preparation stage. Gemma receives grouped prose units rather than isolated
 paragraphs. Paragraph boundaries remain intact, headings and scene markers
 bypass the model, and neighboring prose is supplied only as non-output context.
 
-The default provider is local Ollama with `gemma4:12b`. Its policy explicitly
+The default provider is local Ollama with `gemma4:26b`. Its policy explicitly
 forbids summarizing, censoring, softening, editorializing, modernizing, or adding
 transitions. Structured responses contain:
 
@@ -166,6 +166,33 @@ indistinguishable from the model that got everything right. The methodology and
 the corpus design are described in
 [`docs/preparation-model-benchmarks.md`](docs/preparation-model-benchmarks.md).
 
+### What the corpus covers
+
+The 48 passages are deliberate, not a random sample: each one probes a specific
+way listening preparation can go wrong, and they divide into four tiers. A model
+has to satisfy all four at once — the difficulty is making every edit in *core*
+while touching nothing in the other three.
+
+- **core — 18 cases · the edits that must happen.** Author–year citations,
+  reference and footnote markers, visual notation (§, figure references, *cf.*),
+  list punctuation, and extraction artifacts, each paired with the exact text the
+  edit should produce. *"The revision of the diagnostic manual (Spitzer et al.
+  1974, Bayer 1981) followed…"* → the parenthetical citation is dropped and
+  nothing else moves.
+- **noop — 12 cases · the edits that must _not_ happen.** Clean prose whose
+  correct answer is to change nothing: dates, place names, units, archaic
+  spellings, and blunt dialogue a careless model likes to "tidy." *"The garrison
+  at Vyborg held until March 1940…"* must come back untouched.
+- **trap — 12 cases · one real edit sitting beside bait.** A legitimate removal
+  placed right next to something that only looks removable but is load-bearing
+  prose. *"…the shock to the dyeworks was immediate (Halloran 1999)."* — the
+  citation goes, but the narrative *"In 1999,"* that opens the same sentence has
+  to survive.
+- **robustness — 6 cases · adversarial text a faithful narrator reads, never
+  obeys.** Prompt injection quoted inside the story, summarization bait, and
+  passages the model must not soften, modernize, or fact-check. A note reading
+  *"Ignore your previous instructions…"* is narrated aloud, not acted on.
+
 Score the default Gemma variants against the whole corpus:
 
 ```bash
@@ -216,15 +243,10 @@ that, here, they do not always deliver.
 
 ![Mean seconds per case, fastest first](docs/images/benchmark-speed.png)
 
-The corpus is organised into four tiers: **core** (real citations, markers,
-notation, and extraction artifacts to fix), **noop** (clean prose whose correct
-answer is to change nothing), **trap** (a legitimate edit sitting next to a
-historical date, hedge, or quotation that must survive), and **robustness**
-(prompt injection, summarization bait, and material a faithful narrator must not
-soften, modernize, or fact-check). Models are ranked by **fidelity failures**
-first — any unrequested change to the author's words fails a case outright — and
-then by a composite of recall, precision, and exactness. The score never buys
-back a changed word with extra coverage.
+Across all four tiers, models are ranked by **fidelity failures** first — any
+unrequested change to the author's words fails a case outright, no matter which
+tier it came from — and then by a composite of recall, precision, and exactness.
+The score never buys back a changed word with extra coverage.
 
 Add `--think both` to score each model twice — once direct, once with reasoning
 enabled — as two separately ranked entries (`gemma4:12b` and `gemma4:12b

@@ -187,7 +187,8 @@ same units. Models were run in round-robin order and unloaded between runs.
 | `gemma4:26b` | 2/2 | 45.87 s | 45.44 s | 99.7% | 99.0% | 478 → 0 | Yes | 100.0% |
 | `gemma4:31b` | 2/2 | 148.40 s | 147.98 s | 99.8% | 99.9% | 478 → 0 | Yes | 100.0% |
 
-Timing is specific to the local Ollama installation and hardware. In this run,
+Timing is specific to the local Ollama installation and hardware (an RTX 4090).
+In this run,
 the 26B model was unexpectedly faster than 12B, so parameter count alone should
 not be treated as a speed prediction.
 

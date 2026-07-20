@@ -111,7 +111,7 @@ def _speed_fig(plt, ranked: Sequence[ModelReport]):
     _headings(
         ax,
         "Mean seconds per case",
-        "Wall time for one prose unit, fastest first; specific to this machine",
+        "Wall time for one prose unit, fastest first; measured on an RTX 4090",
     )
     return fig
 

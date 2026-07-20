@@ -456,6 +456,20 @@ class ModularWorkflowTests(unittest.TestCase):
 
 
 class OllamaProviderTests(unittest.TestCase):
+    def setUp(self):
+        # These tests exercise the adapter's own mechanics, so pin them to its
+        # code defaults instead of whatever PREPARATION_PROVIDERS the project
+        # ships. Without this, the config-driven `think` fallback (and any future
+        # config default) leaks in — e.g. raising num_predict out from under the
+        # truncation test — so the suite would fail on a config edit, not a code
+        # bug. The dedicated fallback tests below re-patch this per case.
+        patcher = patch(
+            "audiobook.preparation.providers.ollama._configured",
+            return_value={},
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_payload_disables_streaming_and_thinking_and_applies_returned_edits(self):
         inner_payload = {
             "edits": [
@@ -515,6 +529,80 @@ class OllamaProviderTests(unittest.TestCase):
         self.assertEqual(result.edits[0].original, "(Smith 1999)")
         self.assertEqual(result.warnings, ["Fixture warning"])
         self.assertEqual(result.provider_metadata.model, "gemma4:31b")
+
+    def test_think_stays_off_and_leaves_budgets_untouched_without_config(self):
+        # With no config entry the adapter's own default governs: thinking off,
+        # and the direct-run context/output budgets left as constructed.
+        provider = OllamaProvider(unload_on_close=False)
+        self.assertIs(provider.think, False)
+        self.assertEqual((provider.num_ctx, provider.num_predict), (8192, 4096))
+        self.assertIs(provider.metadata.parameters["think"], False)
+
+    def test_unset_think_defers_to_config_and_raises_budgets(self):
+        # An unset think reads the project config, mirroring auto_pull, so a run
+        # can turn reasoning on from config.py alone. A thinking model emits its
+        # trace ahead of the JSON, so both budgets are floored up to fit it.
+        with patch(
+            "audiobook.preparation.providers.ollama._configured",
+            return_value={"think": True},
+        ):
+            provider = OllamaProvider(unload_on_close=False)
+        self.assertIs(provider.think, True)
+        self.assertGreaterEqual(provider.num_ctx, 16384)
+        self.assertGreaterEqual(provider.num_predict, 8192)
+        self.assertIs(provider.metadata.parameters["think"], True)
+
+    def test_explicit_think_overrides_config_in_both_directions(self):
+        # The benchmark path passes think explicitly per variant, so an explicit
+        # value must win over config whichever way the two disagree.
+        with patch(
+            "audiobook.preparation.providers.ollama._configured",
+            return_value={"think": True},
+        ):
+            forced_off = OllamaProvider(think=False, unload_on_close=False)
+        self.assertIs(forced_off.think, False)
+        self.assertEqual(
+            (forced_off.num_ctx, forced_off.num_predict), (8192, 4096)
+        )
+
+        with patch(
+            "audiobook.preparation.providers.ollama._configured",
+            return_value={"think": False},
+        ):
+            forced_on = OllamaProvider(think=True, unload_on_close=False)
+        self.assertIs(forced_on.think, True)
+
+    def test_enabled_think_is_sent_in_the_chat_payload(self):
+        # Guards the whole path config -> provider.think -> request body. The
+        # sibling "disables" test only sees think off, so a regression that
+        # hard-coded think off (or dropped it from the payload) would let a
+        # thinking run silently degrade to a direct answer with nothing red.
+        captured = []
+
+        def fake_urlopen(request, timeout):
+            captured.append(request)
+            return FakeHTTPResponse(
+                json.dumps(
+                    {"message": {"content": json.dumps({"edits": [], "warnings": []})}}
+                ).encode("utf-8")
+            )
+
+        with patch(
+            "audiobook.preparation.providers.ollama._configured",
+            return_value={"think": True},
+        ):
+            provider = OllamaProvider(unload_on_close=False)
+        request = PreparationRequest(
+            chapter_title="One", source_text="A complete source passage."
+        )
+        with patch(
+            "audiobook.preparation.providers.ollama.urlopen",
+            side_effect=fake_urlopen,
+        ):
+            provider.prepare(request)
+
+        payload = json.loads(captured[0].data.decode("utf-8"))
+        self.assertIs(payload["think"], True)
 
     def test_malformed_transport_and_structured_json_are_rejected(self):
         provider = OllamaProvider(unload_on_close=False)
@@ -680,9 +768,11 @@ class CommandLineTests(unittest.TestCase):
         args = cli_module.parse_args([])
 
         self.assertEqual(args.command, "all")
-        self.assertEqual(DEFAULT_PREPARATION_MODEL, "gemma4:12b")
-        self.assertEqual(DEFAULT_OLLAMA_MODEL, "gemma4:12b")
-        self.assertEqual(args.preparation_model, "gemma4:12b")
+        # The configured default and the adapter's standalone fallback (used when
+        # the preparation package runs without a project config) are kept in step.
+        self.assertEqual(DEFAULT_PREPARATION_MODEL, "gemma4:26b")
+        self.assertEqual(DEFAULT_OLLAMA_MODEL, "gemma4:26b")
+        self.assertEqual(args.preparation_model, "gemma4:26b")
         self.assertIn("Qwen3-TTS", args.tts_model)
         self.assertNotEqual(args.preparation_model, args.tts_model)
         self.assertIn("Qwen3-TTS", TTS_MODEL)
