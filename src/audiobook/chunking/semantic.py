@@ -1,9 +1,12 @@
 """Build coherent narration chunks from prepared chapter text.
 
-The hierarchy is section to paragraph to sentence: paragraphs remain intact
-when practical, adjacent short paragraphs may share a request, and sentences
-are considered only when a paragraph exceeds the configured soft maximum.
-Neighboring context is retained as metadata and is never added to spoken text.
+The hierarchy is section to paragraph to sentence to clause: paragraphs remain
+intact when practical, adjacent short paragraphs may share a request, sentences
+are considered only when a paragraph exceeds the configured soft maximum, and a
+single sentence longer than the hard maximum is broken at its clause pauses (and
+only then, for a clause still too long, at word boundaries) so no chunk is ever
+an unbounded generation. Neighboring context is retained as metadata and is
+never added to spoken text.
 """
 
 from __future__ import annotations
@@ -25,6 +28,11 @@ RE_SENTENCE_BOUNDARY = re.compile(
     r"(?<=[.!?])(?:[\"'”’)]*)\s+(?=[A-Z0-9\"'“‘(\[])"
 )
 RE_DIALOGUE = re.compile(r"^(?:[\"'“‘]|[-—]\s)")
+# Clause pauses inside a sentence too long to narrate as one generation: the
+# whitespace that follows a comma, semicolon, colon, or em dash. The delimiter
+# stays with the clause before it, so joining the parts back with a single space
+# reproduces the sentence verbatim (spoken text is single-space normalized).
+RE_CLAUSE_BOUNDARY = re.compile(r"(?<=[,;:—])\s+|(?<=--)\s+")
 
 
 @dataclass
@@ -126,30 +134,68 @@ def sentence_split(text: str) -> list[str]:
         return [part.strip() for part in RE_SENTENCE_BOUNDARY.split(text) if part.strip()]
 
 
+def _greedy_pack(pieces: Sequence[str], max_chars: int) -> list[str]:
+    """Group space-joined pieces so each group stays within ``max_chars``.
+
+    A single piece already longer than ``max_chars`` is emitted on its own: the
+    caller has split as finely as it usefully can, and forcing it smaller would
+    mean cutting a word. Joining the returned groups with a single space
+    reproduces ``" ".join(pieces)``.
+    """
+    groups: list[str] = []
+    current: list[str] = []
+    current_length = 0
+    for piece in pieces:
+        proposed = current_length + len(piece) + (1 if current else 0)
+        if current and proposed > max_chars:
+            groups.append(" ".join(current))
+            current = [piece]
+            current_length = len(piece)
+        else:
+            current.append(piece)
+            current_length = proposed
+    if current:
+        groups.append(" ".join(current))
+    return groups
+
+
+def _split_long_sentence(sentence: str, max_chars: int) -> list[str]:
+    """Break a sentence longer than ``max_chars`` at its most natural pauses.
+
+    A sentence no paragraph split could shorten is the worst input for
+    autoregressive TTS, which drifts over a long single generation. It is broken
+    first at clause punctuation — the pauses a narrator would take anyway — and
+    only a clause still over the limit is packed at word boundaries. A word is
+    never cut, so a lone over-long token (a URL, a coined word) is still emitted
+    intact rather than mangled.
+    """
+    if len(sentence) <= max_chars:
+        return [sentence]
+
+    parts: list[str] = []
+    for clause in RE_CLAUSE_BOUNDARY.split(sentence):
+        if not clause:
+            continue
+        if len(clause) <= max_chars:
+            parts.append(clause)
+        else:
+            parts.extend(_greedy_pack(clause.split(), max_chars))
+    return _greedy_pack(parts, max_chars)
+
+
 def split_long_paragraph(paragraph: str, max_chars: int) -> list[str]:
-    """Group complete sentences; leave an indivisible long sentence intact."""
+    """Group complete sentences; split a lone over-long sentence as a last resort."""
     if len(paragraph) <= max_chars:
         return [paragraph]
 
     sentences = sentence_split(paragraph)
     if len(sentences) <= 1:
-        return [paragraph]
+        return _split_long_sentence(paragraph, max_chars)
 
     parts: list[str] = []
-    current: list[str] = []
-    current_length = 0
     for sentence in sentences:
-        proposed = current_length + len(sentence) + (1 if current else 0)
-        if current and proposed > max_chars:
-            parts.append(" ".join(current))
-            current = [sentence]
-            current_length = len(sentence)
-        else:
-            current.append(sentence)
-            current_length = proposed
-    if current:
-        parts.append(" ".join(current))
-    return parts
+        parts.extend(_split_long_sentence(sentence, max_chars))
+    return _greedy_pack(parts, max_chars)
 
 
 def _make_text_units(content: str, max_chars: int) -> list[TextUnit]:
@@ -321,6 +367,7 @@ def display_chunk_plan(plan: Sequence[tuple[str, Sequence[NarrationChunk]]]) -> 
 
 __all__ = [
     "NarrationChunk",
+    "RE_CLAUSE_BOUNDARY",
     "RE_DIALOGUE",
     "RE_SCENE_BREAK",
     "RE_SENTENCE_BOUNDARY",
@@ -328,9 +375,11 @@ __all__ = [
     "TextUnit",
     "_context_head",
     "_context_tail",
+    "_greedy_pack",
     "_join_units",
     "_make_text_units",
     "_normalize_paragraph",
+    "_split_long_sentence",
     "build_chunk_plan",
     "display_chunk_plan",
     "make_narration_chunks",

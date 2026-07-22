@@ -1,0 +1,27 @@
+{
+  "id": "trap-013-spoken-abbreviation-must-stay",
+  "tier": "trap",
+  "categories": [
+    "reference_marker"
+  ],
+  "chapter_title": "The Last Joiner",
+  "source": "He kept the old craft alive with tools his grandfather would have known — the drawknife, the spokeshave, the travisher, etc. — and would let no machine cross the threshold of the workshop.[4] The younger joiners thought his stubbornness a pose until the winter the factory contracts collapsed and the old skills were suddenly the only ones worth having.",
+  "expect": [
+    {
+      "anchor": "[4]",
+      "accept": [
+        ""
+      ],
+      "category": "reference_marker",
+      "why": "A numeric endnote marker is a page artefact with nothing to say aloud."
+    }
+  ],
+  "traps": [
+    {
+      "span": "etc.",
+      "label": "spoken-abbreviation-must-stay"
+    }
+  ],
+  "prepared": "He kept the old craft alive with tools his grandfather would have known — the drawknife, the spokeshave, the travisher, etc. — and would let no machine cross the threshold of the workshop. The younger joiners thought his stubbornness a pose until the winter the factory contracts collapsed and the old skills were suddenly the only ones worth having.",
+  "notes": "An open-ended list closed with 'etc.', set beside a removable numeric endnote marker. 'etc.' is narrated as 'et cetera' and marks the list as non-exhaustive, so a model that strips visual shorthand along with the marker deletes a spoken word and quietly closes a list the author left open."
+}

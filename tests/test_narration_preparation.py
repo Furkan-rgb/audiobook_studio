@@ -133,18 +133,24 @@ class NormalizationAndSegmentationTests(unittest.TestCase):
 class PromptVersionTests(unittest.TestCase):
     """The system prompt is versioned, and a request resolves through its version."""
 
-    def test_default_version_is_registered_and_is_v5(self):
-        self.assertEqual(DEFAULT_PROMPT_VERSION, "narration-preparation-v5")
+    def test_default_version_is_registered_and_is_v6(self):
+        self.assertEqual(DEFAULT_PROMPT_VERSION, "narration-preparation-v6")
         self.assertIn(DEFAULT_PROMPT_VERSION, SYSTEM_PROMPTS)
-        self.assertIn("narration-preparation-v4", SYSTEM_PROMPTS)
+        for older in ("narration-preparation-v4", "narration-preparation-v5"):
+            self.assertIn(older, SYSTEM_PROMPTS)
 
     def test_versions_carry_distinct_frozen_text(self):
         v4 = system_prompt_for("narration-preparation-v4")
         v5 = system_prompt_for("narration-preparation-v5")
+        v6 = system_prompt_for("narration-preparation-v6")
         self.assertNotEqual(v4, v5)
+        self.assertNotEqual(v5, v6)
         # v4 is the frozen baseline: its cautious ligature clause must survive so a
         # rerun reproduces the scored behaviour, not a silently patched version.
         self.assertIn("only when the correction is unambiguous", v4)
+        # v5 is frozen too: the abbreviation carve-out v6 introduces must not leak
+        # back into it, or a v5 rerun would no longer reproduce its numbers.
+        self.assertNotIn("Spoken abbreviations", v5)
 
     def test_v5_acts_on_the_benchmark_lessons(self):
         v5 = system_prompt_for("narration-preparation-v5")
@@ -154,8 +160,23 @@ class PromptVersionTests(unittest.TestCase):
         self.assertIn("[sic]", v5)
         self.assertNotIn("only when the correction is unambiguous", v5)
 
+    def test_v6_protects_spoken_abbreviations_and_keeps_v5_lessons(self):
+        v6 = system_prompt_for("narration-preparation-v6")
+        # The new carve-out: abbreviations narrated as words (etc. -> "et cetera")
+        # carry meaning and must not be filed under removable visual notation.
+        self.assertIn("Spoken abbreviations", v6)
+        self.assertIn("for example", v6)
+        # v6 is built on v5, so every v5 protection still holds.
+        self.assertIn("ligature", v6)
+        self.assertIn("[sic]", v6)
+        self.assertNotIn("only when the correction is unambiguous", v6)
+
     def test_build_messages_injects_the_requested_version(self):
-        for version in ("narration-preparation-v4", "narration-preparation-v5"):
+        for version in (
+            "narration-preparation-v4",
+            "narration-preparation-v5",
+            "narration-preparation-v6",
+        ):
             request = PreparationRequest(
                 chapter_title="C",
                 source_text="The first line.",

@@ -90,6 +90,7 @@ from .extraction.pdf import (
 from .synthesis.qwen import generate_chunk, load_qwen_model
 from .chunking.semantic import (
     NarrationChunk,
+    RE_CLAUSE_BOUNDARY,
     RE_DIALOGUE,
     RE_SCENE_BREAK,
     RE_SENTENCE_BOUNDARY,
@@ -97,9 +98,11 @@ from .chunking.semantic import (
     TextUnit,
     _context_head,
     _context_tail,
+    _greedy_pack,
     _join_units,
     _make_text_units,
     _normalize_paragraph,
+    _split_long_sentence,
     build_chunk_plan,
     display_chunk_plan,
     make_narration_chunks,

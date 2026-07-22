@@ -50,9 +50,59 @@ class SemanticChunkingTests(unittest.TestCase):
         for part in parts:
             self.assertTrue(part.endswith("."))
 
-    def test_single_oversized_sentence_is_not_cut(self):
+    def test_single_oversized_sentence_without_split_points_is_not_cut(self):
+        # A lone over-long token (no clause punctuation, no spaces) cannot be
+        # shortened without cutting a word, so it is still emitted intact.
         sentence = "A" * 1500 + "."
         self.assertEqual(audiobook.split_long_paragraph(sentence, 1300), [sentence])
+
+    def test_oversized_sentence_is_bounded_at_clause_pauses(self):
+        clause = "the argument turns on a single quiet distinction, "
+        sentence = (clause * 12).strip() + "."
+        self.assertGreater(len(sentence), 300)
+
+        parts = audiobook.split_long_paragraph(sentence, max_chars=200)
+
+        self.assertGreater(len(parts), 1)
+        # Every part respects the hard maximum: no unbounded TTS generation.
+        for part in parts:
+            self.assertLessEqual(len(part), 200)
+        # Splitting is loss-free: rejoining reproduces the sentence verbatim.
+        self.assertEqual(" ".join(parts), sentence)
+        # A clause delimiter stays with the clause before it, so a following
+        # part never opens with dangling punctuation.
+        for part in parts[1:]:
+            self.assertFalse(part.startswith((",", ";", ":")))
+
+    def test_clauseless_long_sentence_falls_back_to_word_boundaries(self):
+        # No clause punctuation, but real word boundaries: pack at words rather
+        # than emit one over-long generation, and never split a word.
+        sentence = "word " * 80
+        sentence = sentence.strip() + "."
+
+        parts = audiobook.split_long_paragraph(sentence, max_chars=100)
+
+        self.assertGreater(len(parts), 1)
+        for part in parts:
+            self.assertLessEqual(len(part), 100)
+            for token in part.split():
+                self.assertIn(token.strip(".,;:—"), {"word"})
+        self.assertEqual(" ".join(parts), sentence)
+
+    def test_make_narration_chunks_never_exceeds_max_for_a_clause_rich_sentence(self):
+        clause = "one measured clause follows another without a full stop, "
+        content = (clause * 30).strip() + "."
+        chunks = audiobook.make_narration_chunks(
+            content, min_chars=200, target_chars=400, max_chars=600
+        )
+
+        self.assertGreater(len(chunks), 1)
+        for chunk in chunks:
+            self.assertLessEqual(chunk.char_count, 600)
+        # Mid-sentence seams are continuations, so assembly crossfades them
+        # rather than inserting a pause inside the sentence.
+        for chunk in chunks[:-1]:
+            self.assertEqual(chunk.boundary_after, "continuation")
 
     def test_dialogue_exchange_stays_together_when_it_fits(self):
         narration = "Narration " + "continues calmly " * 55
@@ -84,8 +134,10 @@ class SemanticChunkingTests(unittest.TestCase):
         self.assertEqual(chunks[0].boundary_after, "scene")
 
     def test_neighbor_context_is_metadata_not_spoken_text(self):
-        first = "First section " + "one " * 220
-        second = "Second section " + "two " * 220
+        # Each side stays a single sub-max chunk so the scene break is the only
+        # boundary and the context comes from the true neighbor across it.
+        first = "First section " + "one " * 100
+        second = "Second section " + "two " * 100
         chunks = audiobook.make_narration_chunks(
             f"{first}\n\n***\n\n{second}",
             context_chars=80,

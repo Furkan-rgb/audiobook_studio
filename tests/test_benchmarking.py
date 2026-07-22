@@ -299,7 +299,7 @@ class CorpusTests(unittest.TestCase):
 
         # load_corpus lints every case, so reaching here already proves each
         # gold answer is reproduced by the production applier.
-        self.assertEqual(len(cases), 48)
+        self.assertEqual(len(cases), 49)
         self.assertEqual(set(tiers), set(TIERS))
         self.assertEqual(set(categories), set(CATEGORIES))
         self.assertEqual(len({case.id for case in cases}), len(cases))
