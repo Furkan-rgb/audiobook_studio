@@ -49,12 +49,22 @@ def _clean_axes(ax) -> None:
     ax.set_axisbelow(True)
 
 
-def _headings(ax, title: str, subtitle: str, *,
-              title_y: float = 1.10, subtitle_y: float = 1.03) -> None:
-    ax.text(0, title_y, title, transform=ax.transAxes, fontsize=15,
-            fontweight="bold", color=_INK, va="bottom")
-    ax.text(0, subtitle_y, subtitle, transform=ax.transAxes, fontsize=9.5,
-            color=_MUTED, va="bottom")
+def _headings(
+    ax, title: str, subtitle: str, *, title_y: float = 1.10, subtitle_y: float = 1.03
+) -> None:
+    ax.text(
+        0,
+        title_y,
+        title,
+        transform=ax.transAxes,
+        fontsize=15,
+        fontweight="bold",
+        color=_INK,
+        va="bottom",
+    )
+    ax.text(
+        0, subtitle_y, subtitle, transform=ax.transAxes, fontsize=9.5, color=_MUTED, va="bottom"
+    )
 
 
 def _scores_fig(plt, ranked: Sequence[ModelReport]):
@@ -79,13 +89,19 @@ def _scores_fig(plt, ranked: Sequence[ModelReport]):
     _clean_axes(ax)
     for position, score, fail in zip(positions, scores, fails):
         note = f"{score:.3f}" + (f"  ·  {fail} fidelity fail" if fail else "")
-        ax.text(min(score, 1.0) + 0.012, position, note, va="center",
-                fontsize=9, color=_MUTED, clip_on=False)
+        ax.text(
+            min(score, 1.0) + 0.012,
+            position,
+            note,
+            va="center",
+            fontsize=9,
+            color=_MUTED,
+            clip_on=False,
+        )
     _headings(
         ax,
         "Composite score",
-        "0.5 recall + 0.3 precision + 0.2 exactness; red = a fidelity failure "
-        "(a changed word)",
+        "0.5 recall + 0.3 precision + 0.2 exactness; red = a fidelity failure (a changed word)",
     )
     return fig
 
@@ -106,8 +122,15 @@ def _speed_fig(plt, ranked: Sequence[ModelReport]):
     ax.xaxis.grid(True, color=_GRID, linewidth=0.8)
     _clean_axes(ax)
     for position, value in zip(positions, seconds):
-        ax.text(value + ceiling * 0.012, position, f"{value:.1f} s", va="center",
-                fontsize=9, color=_MUTED, clip_on=False)
+        ax.text(
+            value + ceiling * 0.012,
+            position,
+            f"{value:.1f} s",
+            va="center",
+            fontsize=9,
+            color=_MUTED,
+            clip_on=False,
+        )
     _headings(
         ax,
         "Mean seconds per case",
@@ -149,8 +172,15 @@ def _by_tier_fig(plt, ranked: Sequence[ModelReport]):
         # the tiers are often all near 1.0, so the exact figure is what
         # separates them.
         for position, value in zip(positions, values):
-            ax.text(min(value, 1.0) + 0.012, position + offset, f"{value:.2f}",
-                    va="center", fontsize=7.5, color=_MUTED, clip_on=False)
+            ax.text(
+                min(value, 1.0) + 0.012,
+                position + offset,
+                f"{value:.2f}",
+                va="center",
+                fontsize=7.5,
+                color=_MUTED,
+                clip_on=False,
+            )
     ax.set_yticks(positions)
     ax.set_yticklabels([item.model for item in ranked], fontsize=10.5)
     ax.invert_yaxis()

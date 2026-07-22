@@ -283,9 +283,7 @@ class DisplayLineTests(unittest.TestCase):
         provider = FakeProvider()
         pipeline = NarrationPreparationPipeline(provider)
 
-        book = pipeline.prepare_book(
-            [("Front Matter", self.FRONT_MATTER)], book_title="Example"
-        )
+        book = pipeline.prepare_book([("Front Matter", self.FRONT_MATTER)], book_title="Example")
 
         self.assertEqual(provider.calls, [])
         units = book.chapters[0].units
@@ -328,10 +326,7 @@ class PreparationValidationTests(unittest.TestCase):
                 "important to the argument and its stated qualification."
             ),
         )
-        prepared = (
-            "The finding remained important to the argument and its stated "
-            "qualification."
-        )
+        prepared = "The finding remained important to the argument and its stated qualification."
 
         report = validate_preparation(request.source_text, prepared)
 
@@ -344,9 +339,7 @@ class PreparationValidationTests(unittest.TestCase):
         with self.assertRaises(PreparationValidationError) as raised:
             validate_preparation(request.source_text, "In summary, " + source)
 
-        self.assertTrue(
-            any("summary-style" in issue for issue in raised.exception.issues)
-        )
+        self.assertTrue(any("summary-style" in issue for issue in raised.exception.issues))
 
     def test_validator_rejects_blank_provider_output(self):
         request = PreparationRequest(
@@ -456,10 +449,7 @@ class PipelineCacheTests(unittest.TestCase):
     def test_max_prose_units_returns_a_valid_partial_artifact(self):
         second = "Second detail " * 6 + "ends here."
         third = "Third detail " * 6 + "ends here."
-        source = (
-            f"# Opening\n\n{self.FIRST}\n\n***\n\n"
-            f"# Later\n\n{second}\n\n{third}"
-        )
+        source = f"# Opening\n\n{self.FIRST}\n\n***\n\n# Later\n\n{second}\n\n{third}"
         provider = FakeProvider()
 
         book = self.pipeline(provider).prepare_book(
@@ -509,9 +499,7 @@ class ModularWorkflowTests(unittest.TestCase):
 
         chapters = narration_chapters(book)
         plan = build_chunk_plan(chapters)
-        spoken = "\n".join(
-            chunk.text for _title, chunks in plan for chunk in chunks
-        )
+        spoken = "\n".join(chunk.text for _title, chunks in plan for chunk in chunks)
 
         self.assertEqual(chapters, [("Preface", prepared)])
         self.assertEqual(spoken, prepared)
@@ -547,9 +535,9 @@ class OllamaProviderTests(unittest.TestCase):
             ],
             "warnings": ["Fixture warning"],
         }
-        response_body = json.dumps(
-            {"message": {"content": json.dumps(inner_payload)}}
-        ).encode("utf-8")
+        response_body = json.dumps({"message": {"content": json.dumps(inner_payload)}}).encode(
+            "utf-8"
+        )
         captured = []
 
         def fake_urlopen(request, timeout):
@@ -625,9 +613,7 @@ class OllamaProviderTests(unittest.TestCase):
         ):
             forced_off = OllamaProvider(think=False, unload_on_close=False)
         self.assertIs(forced_off.think, False)
-        self.assertEqual(
-            (forced_off.num_ctx, forced_off.num_predict), (8192, 4096)
-        )
+        self.assertEqual((forced_off.num_ctx, forced_off.num_predict), (8192, 4096))
 
         with patch(
             "audiobook.preparation.providers.ollama._configured",
@@ -656,9 +642,7 @@ class OllamaProviderTests(unittest.TestCase):
             return_value={"think": True},
         ):
             provider = OllamaProvider(unload_on_close=False)
-        request = PreparationRequest(
-            chapter_title="One", source_text="A complete source passage."
-        )
+        request = PreparationRequest(chapter_title="One", source_text="A complete source passage.")
         with patch(
             "audiobook.preparation.providers.ollama.urlopen",
             side_effect=fake_urlopen,
@@ -686,9 +670,7 @@ class OllamaProviderTests(unittest.TestCase):
             side_effect=fake_urlopen,
         ):
             provider.prepare(
-                PreparationRequest(
-                    chapter_title="One", source_text="A complete source passage."
-                )
+                PreparationRequest(chapter_title="One", source_text="A complete source passage.")
             )
         return json.loads(captured[0].data.decode("utf-8"))
 
@@ -769,9 +751,7 @@ class OllamaProviderTests(unittest.TestCase):
             with self.assertRaisesRegex(ProviderResponseError, "malformed JSON"):
                 provider.prepare(request)
 
-        outer = json.dumps(
-            {"message": {"content": "not structured json"}}
-        ).encode("utf-8")
+        outer = json.dumps({"message": {"content": "not structured json"}}).encode("utf-8")
         with patch(
             "audiobook.preparation.providers.ollama.urlopen",
             return_value=FakeHTTPResponse(outer),
@@ -829,9 +809,7 @@ class OllamaProviderTests(unittest.TestCase):
             on_pull_progress=progress.append,
         )
         empty_tags = json.dumps({"models": []}).encode("utf-8")
-        installed_tags = json.dumps(
-            {"models": [{"name": "gemma4:12b"}]}
-        ).encode("utf-8")
+        installed_tags = json.dumps({"models": [{"name": "gemma4:12b"}]}).encode("utf-8")
         pull_stream = b"\n".join(
             [
                 json.dumps({"status": "pulling manifest"}).encode("utf-8"),
@@ -852,9 +830,7 @@ class OllamaProviderTests(unittest.TestCase):
             if request.full_url.endswith("/api/pull"):
                 return FakeHTTPResponse(pull_stream)
             # The first probe finds nothing; the one after the pull finds it.
-            return FakeHTTPResponse(
-                installed_tags if "pull" in endpoints else empty_tags
-            )
+            return FakeHTTPResponse(installed_tags if "pull" in endpoints else empty_tags)
 
         with patch(
             "audiobook.preparation.providers.ollama.urlopen",
@@ -869,16 +845,12 @@ class OllamaProviderTests(unittest.TestCase):
     def test_failed_pull_and_disabled_auto_pull_report_the_manual_command(self):
         empty_tags = json.dumps({"models": []}).encode("utf-8")
 
-        manual = OllamaProvider(
-            model="gemma4:12b", unload_on_close=False, auto_pull=False
-        )
+        manual = OllamaProvider(model="gemma4:12b", unload_on_close=False, auto_pull=False)
         with patch(
             "audiobook.preparation.providers.ollama.urlopen",
             return_value=FakeHTTPResponse(empty_tags),
         ):
-            with self.assertRaisesRegex(
-                ProviderUnavailableError, "ollama pull gemma4:12b"
-            ):
+            with self.assertRaisesRegex(ProviderUnavailableError, "ollama pull gemma4:12b"):
                 manual.check_available()
 
         automatic = OllamaProvider(

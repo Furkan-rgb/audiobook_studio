@@ -36,9 +36,9 @@ ProgressCallback = Callable[[int, int], None]
 
 
 def _stable_hash(payload: object) -> str:
-    encoded = json.dumps(
-        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -56,9 +56,7 @@ class NarrationPreparationPipeline:
         validation_policy: ValidationPolicy | None = None,
     ) -> None:
         if target_unit_chars <= 0 or max_unit_chars < target_unit_chars:
-            raise ValueError(
-                "Unit sizes must satisfy 0 < target_unit_chars <= max_unit_chars"
-            )
+            raise ValueError("Unit sizes must satisfy 0 < target_unit_chars <= max_unit_chars")
         if context_chars < 0:
             raise ValueError("context_chars cannot be negative")
         self.provider = provider
@@ -164,9 +162,7 @@ class NarrationPreparationPipeline:
             for _index, _title, _source, _normalized, segments in planned
             for segment in segments
         )
-        call_limit = (
-            total_prose_units if max_prose_units is None else max_prose_units
-        )
+        call_limit = total_prose_units if max_prose_units is None else max_prose_units
         will_be_partial = call_limit < total_prose_units
 
         book = PreparedBook(
@@ -201,8 +197,7 @@ class NarrationPreparationPipeline:
                     break
                 source_digest = hashlib.sha256(segment.text.encode("utf-8")).hexdigest()
                 unit_id = (
-                    f"chapter-{chapter_index:04d}-unit-{segment.position:04d}-"
-                    f"{source_digest[:12]}"
+                    f"chapter-{chapter_index:04d}-unit-{segment.position:04d}-{source_digest[:12]}"
                 )
 
                 if segment.kind != "prose":
@@ -258,9 +253,7 @@ class NarrationPreparationPipeline:
                     prepared_text, applied, refusals = apply_edits(
                         segment.text, result.edits, policy=self.validation_policy
                     )
-                    validate_preparation(
-                        segment.text, prepared_text, policy=self.validation_policy
-                    )
+                    validate_preparation(segment.text, prepared_text, policy=self.validation_policy)
                     final_text = prepared_text.strip()
                     unit = PreparedUnit(
                         unit_id=unit_id,
@@ -273,9 +266,7 @@ class NarrationPreparationPipeline:
                         cache_key=cache_key,
                         edits=applied,
                         warnings=[*result.warnings, *refusals],
-                        provider_metadata=(
-                            result.provider_metadata or self.provider.metadata
-                        ),
+                        provider_metadata=(result.provider_metadata or self.provider.metadata),
                     )
                 prepared_chapter.units.append(unit)
                 prose_units_processed += 1
@@ -314,8 +305,6 @@ def prepare_book(
         "policy",
         "validation_policy",
     }
-    pipeline_kwargs = {
-        key: kwargs.pop(key) for key in tuple(kwargs) if key in pipeline_keys
-    }
+    pipeline_kwargs = {key: kwargs.pop(key) for key in tuple(kwargs) if key in pipeline_keys}
     pipeline = NarrationPreparationPipeline(provider, **pipeline_kwargs)  # type: ignore[arg-type]
     return pipeline.prepare_book(chapters, **kwargs)  # type: ignore[arg-type]

@@ -215,7 +215,7 @@ def _project(source: str, prepared: str, start: int, end: int) -> str:
         if i1 < end <= i2:
             output_end = j1 + (end - i1) if tag == "equal" else j2
             break
-    return prepared[output_start:max(output_start, output_end)]
+    return prepared[output_start : max(output_start, output_end)]
 
 
 def _matches_accepted(observed: str, accept: Sequence[str]) -> bool:
@@ -258,7 +258,9 @@ def protocol_stats(
             stats.label_only += 1
             continue
         candidate = (
-            edit if stripped == edit.original else PreparationEdit(
+            edit
+            if stripped == edit.original
+            else PreparationEdit(
                 category=edit.category,
                 original=stripped,
                 replacement=edit.replacement,
@@ -288,9 +290,7 @@ def _trap_label(case: BenchmarkCase, region: ChangeRegion) -> str | None:
 
 def _classify(case: BenchmarkCase, region: ChangeRegion) -> UnexpectedChange:
     changed = words_changed(region.source_text, region.output_text)
-    cosmetic = changed == 0 or collapse(region.source_text) == collapse(
-        region.output_text
-    )
+    cosmetic = changed == 0 or collapse(region.source_text) == collapse(region.output_text)
     return UnexpectedChange(
         source_text=region.source_text,
         output_text=region.output_text,
@@ -361,9 +361,7 @@ def score_case(
     unexpected = [
         _classify(case, region)
         for region in regions
-        if not any(
-            contained_in_expected(region, item) for item in case.expect
-        )
+        if not any(contained_in_expected(region, item) for item in case.expect)
     ]
 
     found = sum(1 for item in outcomes if item.found)
@@ -372,15 +370,13 @@ def score_case(
     # recall and exactness are one by definition. Only precision can be lost.
     recall = found / len(outcomes) if outcomes else 1.0
     exactness = exact / len(outcomes) if outcomes else 1.0
-    precision = (
-        found / (found + len(unexpected)) if (found + len(unexpected)) else 1.0
-    )
+    precision = found / (found + len(unexpected)) if (found + len(unexpected)) else 1.0
     fidelity_pass = not any(item.severity == "substantive" for item in unexpected)
     score = (
-        RECALL_WEIGHT * recall
-        + PRECISION_WEIGHT * precision
-        + EXACTNESS_WEIGHT * exactness
-    ) if fidelity_pass else 0.0
+        (RECALL_WEIGHT * recall + PRECISION_WEIGHT * precision + EXACTNESS_WEIGHT * exactness)
+        if fidelity_pass
+        else 0.0
+    )
 
     return CaseScore(
         case_id=case.id,
@@ -451,9 +447,7 @@ def edit_signature(edits: Sequence[PreparationEdit]) -> frozenset[tuple[str, str
     determinism figure should not reward.
     """
 
-    return frozenset(
-        (collapse(edit.original), collapse(edit.replacement)) for edit in edits
-    )
+    return frozenset((collapse(edit.original), collapse(edit.replacement)) for edit in edits)
 
 
 def determinism(signatures: Sequence[frozenset[tuple[str, str]]]) -> float | None:
@@ -465,9 +459,7 @@ def determinism(signatures: Sequence[frozenset[tuple[str, str]]]) -> float | Non
     for index, first in enumerate(signatures):
         for second in signatures[index + 1 :]:
             union = first | second
-            agreements.append(
-                len(first & second) / len(union) if union else 1.0
-            )
+            agreements.append(len(first & second) / len(union) if union else 1.0)
     return _mean(agreements)
 
 
@@ -482,9 +474,7 @@ def trap_failures(scores: Sequence[CaseScore]) -> list[tuple[str, int]]:
 
     counter: Counter[str] = Counter()
     for item in scores:
-        for label in {
-            change.trap_label for change in item.unexpected if change.trap_label
-        }:
+        for label in {change.trap_label for change in item.unexpected if change.trap_label}:
             counter[label] += 1
     return counter.most_common()
 

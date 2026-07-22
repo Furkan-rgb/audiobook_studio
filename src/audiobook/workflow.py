@@ -102,8 +102,7 @@ def write_prepared_markdown(book: Any, path: Path) -> None:
     lines = [f"# {book.title}", ""]
     lines.extend(
         [
-            f"> Prepared by {book.provider_metadata.name} / "
-            f"{book.provider_metadata.model}",
+            f"> Prepared by {book.provider_metadata.name} / {book.provider_metadata.model}",
             "",
         ]
     )
@@ -272,8 +271,7 @@ def _load_clone_narrator(provider: Any, voice_spec: str | None = None) -> _Narra
         voice = resolve_voice(voice_spec or ACTIVE_VOICE, voices_dir=VOICES_DIR)
     except FileNotFoundError as exc:
         raise RuntimeError(
-            f"{exc} Set ACTIVE_VOICE before narrating with "
-            "TTS_BACKEND='voice_clone'."
+            f"{exc} Set ACTIVE_VOICE before narrating with TTS_BACKEND='voice_clone'."
         ) from exc
     print(describe(voice))
 
@@ -287,9 +285,7 @@ def _load_clone_narrator(provider: Any, voice_spec: str | None = None) -> _Narra
         label=voice.slug,
         model_path=_model_identity(provider),
         instruction=voice.instruct,
-        generate=lambda chunk: provider.generate(
-            text=chunk.text, language=LANGUAGE, voice=prompt
-        ),
+        generate=lambda chunk: provider.generate(text=chunk.text, language=LANGUAGE, voice=prompt),
         close=provider.close,
     )
 
@@ -302,9 +298,7 @@ def _load_narrator(tts_model: str, voice_spec: str | None = None) -> _Narrator:
     Base checkpoint and the requested reference clip instead.
     """
 
-    provider = create_synthesis_provider(
-        DEFAULT_SYNTHESIS_PROVIDER, custom_voice_model=tts_model
-    )
+    provider = create_synthesis_provider(DEFAULT_SYNTHESIS_PROVIDER, custom_voice_model=tts_model)
     try:
         provider.check_available()
         if TTS_BACKEND == "voice_clone":
@@ -380,9 +374,7 @@ def narrate_chapters(
                 if sample_rate is None:
                     sample_rate = generated_rate
                 elif generated_rate != sample_rate:
-                    raise RuntimeError(
-                        "The narrator returned inconsistent sample rates."
-                    )
+                    raise RuntimeError("The narrator returned inconsistent sample rates.")
 
                 duration_seconds = len(audio) / generated_rate
                 audio_segments.append(audio)
@@ -414,17 +406,13 @@ def narrate_chapters(
                 audio_segments,
                 sample_rate,
             )
-            for item, chunk_diagnostics in zip(
-                chapter_manifest_items, loudness_diagnostics
-            ):
+            for item, chunk_diagnostics in zip(chapter_manifest_items, loudness_diagnostics):
                 item.update(chunk_diagnostics.to_manifest())
             chapter_audio = assemble_chunk_audio(chunks, audio_segments, sample_rate)
             wav_name, duration_ms = write_chapter_wav(
                 temp_dir, chapter_index, chapter_audio, sample_rate
             )
-            chapter_timings.append(
-                (title, current_time_ms, current_time_ms + duration_ms)
-            )
+            chapter_timings.append((title, current_time_ms, current_time_ms + duration_ms))
             current_time_ms += duration_ms
             wav_files.append(wav_name)
     finally:
@@ -453,9 +441,7 @@ def narrate_chapters(
         or options.preview_chunks is not None
         or options.preparation_was_preview
     )
-    output_name = (
-        DEFAULT_PREVIEW_OUTPUT_FILENAME if is_preview else DEFAULT_OUTPUT_FILENAME
-    )
+    output_name = DEFAULT_PREVIEW_OUTPUT_FILENAME if is_preview else DEFAULT_OUTPUT_FILENAME
     output_path = options.output_dir / output_name
     print(f"Merging {len(wav_files)} chapters into {output_path}...")
     merge_chapters(temp_dir, wav_files, chapter_timings, output_path)
@@ -483,9 +469,7 @@ def narrate_prepared_script(options: NarrationWorkflowOptions) -> Path | None:
             preview_chunks=options.preview_chunks,
             dry_run=options.dry_run,
             keep_temp=options.keep_temp,
-            preparation_was_preview=(
-                options.preparation_was_preview or not book.complete
-            ),
+            preparation_was_preview=(options.preparation_was_preview or not book.complete),
             voice=options.voice,
         ),
         prepared_book=book,

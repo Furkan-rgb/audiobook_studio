@@ -83,8 +83,7 @@ def _group_prose(paragraphs: Sequence[str], target_chars: int, max_chars: int) -
         for part in _split_oversized_paragraph(paragraph, max_chars):
             candidate = "\n\n".join([*current, part])
             if current and (
-                len(candidate) > max_chars
-                or len("\n\n".join(current)) >= target_chars
+                len(candidate) > max_chars or len("\n\n".join(current)) >= target_chars
             ):
                 groups.append("\n\n".join(current))
                 current = [part]
@@ -156,9 +155,7 @@ def segment_text(
             kind=kind,
             text=text,
             previous_context=_clip_tail(previous_prose.get(position, ""), context_chars),
-            following_context=_clip_head(
-                following_prose.get(position, ""), context_chars
-            ),
+            following_context=_clip_head(following_prose.get(position, ""), context_chars),
         )
         for position, (kind, text) in enumerate(raw_units)
     ]

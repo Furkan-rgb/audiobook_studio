@@ -42,14 +42,8 @@ class ProviderMetadata:
         return cls(
             name=str(payload["name"]),
             model=str(payload["model"]),
-            prompt_version=str(
-                payload.get("prompt_version", DEFAULT_PROMPT_VERSION)
-            ),
-            base_url=(
-                str(payload["base_url"])
-                if payload.get("base_url") is not None
-                else None
-            ),
+            prompt_version=str(payload.get("prompt_version", DEFAULT_PROMPT_VERSION)),
+            base_url=(str(payload["base_url"]) if payload.get("base_url") is not None else None),
             parameters=dict(payload.get("parameters", {})),
         )
 
@@ -76,20 +70,12 @@ class SourceMetadata:
     def from_dict(cls, payload: dict[str, Any]) -> "SourceMetadata":
         return cls(
             path=str(payload["path"]) if payload.get("path") is not None else None,
-            sha256=(
-                str(payload["sha256"])
-                if payload.get("sha256") is not None
-                else None
-            ),
+            sha256=(str(payload["sha256"]) if payload.get("sha256") is not None else None),
             size_bytes=(
-                int(payload["size_bytes"])
-                if payload.get("size_bytes") is not None
-                else None
+                int(payload["size_bytes"]) if payload.get("size_bytes") is not None else None
             ),
             media_type=(
-                str(payload["media_type"])
-                if payload.get("media_type") is not None
-                else None
+                str(payload["media_type"]) if payload.get("media_type") is not None else None
             ),
             extra=dict(payload.get("extra", {})),
         )
@@ -202,9 +188,7 @@ class PreparedUnit:
             "edits": [edit.to_dict() for edit in self.edits],
             "warnings": self.warnings,
             "provider_metadata": (
-                self.provider_metadata.to_dict()
-                if self.provider_metadata is not None
-                else None
+                self.provider_metadata.to_dict() if self.provider_metadata is not None else None
             ),
             "cache_hit": self.cache_hit,
         }
@@ -221,10 +205,7 @@ class PreparedUnit:
             source_sha256=str(payload.get("source_sha256", "")),
             prepared_sha256=str(payload.get("prepared_sha256", "")),
             cache_key=str(payload.get("cache_key", "")),
-            edits=[
-                PreparationEdit.from_dict(item)
-                for item in payload.get("edits", [])
-            ],
+            edits=[PreparationEdit.from_dict(item) for item in payload.get("edits", [])],
             warnings=[str(item) for item in payload.get("warnings", [])],
             provider_metadata=(
                 ProviderMetadata.from_dict(metadata) if metadata is not None else None
@@ -274,9 +255,7 @@ class PreparedChapter:
             title=str(payload["title"]),
             source_text=str(payload["source_text"]),
             normalized_text=str(payload["normalized_text"]),
-            units=[
-                PreparedUnit.from_dict(item) for item in payload.get("units", [])
-            ],
+            units=[PreparedUnit.from_dict(item) for item in payload.get("units", [])],
             source_sha256=str(payload.get("source_sha256", "")),
             normalized_sha256=str(payload.get("normalized_sha256", "")),
             prepared_sha256=str(payload.get("prepared_sha256", "")),
@@ -335,21 +314,14 @@ class PreparedBook:
             schema_version=int(payload["schema_version"]),
             title=str(payload["title"]),
             source_metadata=SourceMetadata.from_dict(payload["source_metadata"]),
-            provider_metadata=ProviderMetadata.from_dict(
-                payload["provider_metadata"]
-            ),
-            prompt_version=str(
-                payload.get("prompt_version", DEFAULT_PROMPT_VERSION)
-            ),
+            provider_metadata=ProviderMetadata.from_dict(payload["provider_metadata"]),
+            prompt_version=str(payload.get("prompt_version", DEFAULT_PROMPT_VERSION)),
             policy=str(payload.get("policy", DEFAULT_POLICY)),
             created_at=str(payload.get("created_at", "")),
             source_sha256=str(payload.get("source_sha256", "")),
             prepared_sha256=str(payload.get("prepared_sha256", "")),
             complete=bool(payload.get("complete", True)),
-            chapters=[
-                PreparedChapter.from_dict(item)
-                for item in payload.get("chapters", [])
-            ],
+            chapters=[PreparedChapter.from_dict(item) for item in payload.get("chapters", [])],
         )
         if (
             payload.get("prepared_text") is not None

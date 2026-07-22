@@ -17,9 +17,7 @@ DISPLAY_LINE_MAX_CHARS = 80
 PROSE_ENDINGS = (".", "!", "?", ":", ";", "”", '"', "’", "'")
 
 MARKDOWN_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}(?:\s+|$)\S?.*$")
-SCENE_MARKER_RE = re.compile(
-    r"^\s*(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,}|(?:~\s*){3,})\s*$"
-)
+SCENE_MARKER_RE = re.compile(r"^\s*(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,}|(?:~\s*){3,})\s*$")
 _LINE_END_HYPHEN_RE = re.compile(r"(?<=[^\W\d_])-[ \t]*\n[ \t]*(?=[a-z])")
 _SOFT_HYPHEN_RE = re.compile("\u00ad")
 _SPACE_RE = re.compile(r"[ \t\f\v]+")
@@ -54,8 +52,10 @@ def is_display_line(text: str) -> bool:
     """
 
     stripped = text.strip()
-    return bool(stripped) and len(stripped) <= DISPLAY_LINE_MAX_CHARS and not (
-        stripped.endswith(PROSE_ENDINGS)
+    return (
+        bool(stripped)
+        and len(stripped) <= DISPLAY_LINE_MAX_CHARS
+        and not (stripped.endswith(PROSE_ENDINGS))
     )
 
 

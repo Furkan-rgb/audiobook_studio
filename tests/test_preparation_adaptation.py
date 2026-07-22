@@ -47,21 +47,15 @@ class EditApplicationTests(unittest.TestCase):
         # The label must not look like the "[n]" reference markers the model
         # is told to delete, or it proposes deleting the labels themselves.
         # The passage's own "[3]" footnote marker must survive untouched.
-        self.assertTrue(
-            all(re.fullmatch(r"\d+: .*", line) for line in view.split("\n") if line)
-        )
+        self.assertTrue(all(re.fullmatch(r"\d+: .*", line) for line in view.split("\n") if line))
         self.assertIn("larger.[3]", view)
 
     def test_deletions_close_up_the_spacing_they_leave_behind(self):
         prepared, applied, warnings = apply_edits(
             self.PASSAGE,
             [
-                PreparationEdit(
-                    category="citation", original="(1979)", replacement="", sentence=1
-                ),
-                PreparationEdit(
-                    category="marker", original="[3]", replacement="", sentence=1
-                ),
+                PreparationEdit(category="citation", original="(1979)", replacement="", sentence=1),
+                PreparationEdit(category="marker", original="[3]", replacement="", sentence=1),
                 PreparationEdit(
                     category="citation", original=" (Gal 2006)", replacement="", sentence=3
                 ),
@@ -96,14 +90,14 @@ class EditApplicationTests(unittest.TestCase):
         self.assertIn("nowhere in the passage", warnings[0])
 
     def test_typographic_differences_in_the_quote_still_anchor(self):
-        source = 'She said “it was over” — plainly (Reed 1998).'
+        source = "She said “it was over” — plainly (Reed 1998)."
 
         prepared, applied, _warnings = apply_edits(
             source,
             [
                 PreparationEdit(
                     category="citation",
-                    original=' (Reed 1998)',
+                    original=" (Reed 1998)",
                     replacement="",
                     sentence=1,
                 ),
@@ -124,11 +118,7 @@ class EditApplicationTests(unittest.TestCase):
 
         prepared, applied, warnings = apply_edits(
             source,
-            [
-                PreparationEdit(
-                    category="citation", original="(1994)", replacement="", sentence=1
-                )
-            ],
+            [PreparationEdit(category="citation", original="(1994)", replacement="", sentence=1)],
         )
 
         self.assertEqual(prepared, source)
@@ -393,17 +383,13 @@ class EditApplicationTests(unittest.TestCase):
 
         self.assertEqual(warnings, [])
         self.assertEqual(len(applied), 1)
-        self.assertEqual(
-            prepared, "The development of gender-identity took decades."
-        )
+        self.assertEqual(prepared, "The development of gender-identity took decades.")
 
     def test_overlapping_edits_keep_the_first_and_report_the_second(self):
         prepared, applied, warnings = apply_edits(
             self.PASSAGE,
             [
-                PreparationEdit(
-                    category="citation", original="(1979)", replacement="", sentence=1
-                ),
+                PreparationEdit(category="citation", original="(1979)", replacement="", sentence=1),
                 PreparationEdit(
                     category="citation",
                     original="Tversky (1979) showed",
@@ -446,9 +432,7 @@ class EditApplicationTests(unittest.TestCase):
                 "no original text",
             ),
             (
-                PreparationEdit(
-                    category="c", original="absent words", replacement="x", sentence=9
-                ),
+                PreparationEdit(category="c", original="absent words", replacement="x", sentence=9),
                 "sentence 9 does not exist",
             ),
         ):

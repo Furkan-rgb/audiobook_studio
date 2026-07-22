@@ -81,9 +81,7 @@ class QwenSynthesisProvider:
                 else _resolve_checkpoint(cfg["design"])
             ),
             "clone": (
-                str(clone_model)
-                if clone_model is not None
-                else _resolve_checkpoint(cfg["clone"])
+                str(clone_model) if clone_model is not None else _resolve_checkpoint(cfg["clone"])
             ),
             "custom_voice": (
                 str(custom_voice_model)
@@ -122,9 +120,7 @@ class QwenSynthesisProvider:
                 "install -r requirements.txt"
             ) from exc
         if not torch.cuda.is_available():
-            raise SynthesisUnavailableError(
-                "Qwen3-TTS generation requires a CUDA GPU."
-            )
+            raise SynthesisUnavailableError("Qwen3-TTS generation requires a CUDA GPU.")
 
     # -- model residency ------------------------------------------------
 
@@ -144,9 +140,7 @@ class QwenSynthesisProvider:
             torch.cuda.empty_cache()
 
         print(f"Loading {path} on {torch.cuda.get_device_name(0)}...")
-        model = Qwen3TTSModel.from_pretrained(
-            path, device_map=self._device, dtype=torch.bfloat16
-        )
+        model = Qwen3TTSModel.from_pretrained(path, device_map=self._device, dtype=torch.bfloat16)
         self._loaded = (path, model)
         return model
 
@@ -222,13 +216,9 @@ class QwenSynthesisProvider:
 
         if voice_name in self._verified_speakers:
             return
-        supported = {
-            str(speaker).casefold() for speaker in model.get_supported_speakers()
-        }
+        supported = {str(speaker).casefold() for speaker in model.get_supported_speakers()}
         if voice_name.casefold() not in supported:
-            raise SynthesisResponseError(
-                f"{voice_name} is not supported by the selected model."
-            )
+            raise SynthesisResponseError(f"{voice_name} is not supported by the selected model.")
         self._verified_speakers.add(voice_name)
 
 

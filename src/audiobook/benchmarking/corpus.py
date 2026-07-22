@@ -62,8 +62,7 @@ class CorpusError(ValueError):
         self.case_id = case_id
         self.issues = list(issues)
         super().__init__(
-            f"Benchmark case '{case_id}' is not valid ground truth: "
-            + "; ".join(issues)
+            f"Benchmark case '{case_id}' is not valid ground truth: " + "; ".join(issues)
         )
 
 
@@ -150,9 +149,7 @@ class BenchmarkCase:
                 }
                 for item in self.expect
             ],
-            "traps": [
-                {"span": item.span, "label": item.label} for item in self.traps
-            ],
+            "traps": [{"span": item.span, "label": item.label} for item in self.traps],
             "prepared": self.prepared,
         }
         if self.previous_context:
@@ -314,9 +311,7 @@ def lint_case(case: BenchmarkCase) -> list[str]:
     for first_index, first in enumerate(case.expect):
         for second in case.expect[first_index + 1 :]:
             if first.start < second.end and second.start < first.end:
-                issues.append(
-                    f"expected edits '{first.anchor}' and '{second.anchor}' overlap"
-                )
+                issues.append(f"expected edits '{first.anchor}' and '{second.anchor}' overlap")
     for trap in case.traps:
         for item in case.expect:
             if trap.start < item.end and item.start < trap.end:
@@ -351,24 +346,16 @@ def lint_case(case: BenchmarkCase) -> list[str]:
     # applier would refuse would mark a correct model wrong.
     for index, item in enumerate(case.expect):
         for variant in item.accept:
-            _text, applied, refusals = apply_edits(
-                case.source, [item.as_edit(variant)]
-            )
+            _text, applied, refusals = apply_edits(case.source, [item.as_edit(variant)])
             if refusals or len(applied) != 1:
                 reason = refusals[0] if refusals else "it was silently dropped"
-                issues.append(
-                    f"expect[{index}] variant {variant!r} is not applicable: {reason}"
-                )
+                issues.append(f"expect[{index}] variant {variant!r} is not applicable: {reason}")
 
-    prepared, applied, refusals = apply_edits(
-        case.source, [item.as_edit() for item in case.expect]
-    )
+    prepared, applied, refusals = apply_edits(case.source, [item.as_edit() for item in case.expect])
     if refusals:
         issues.extend(f"the gold edits are not all applicable: {item}" for item in refusals)
     if len(applied) != len(case.expect):
-        issues.append(
-            f"only {len(applied)} of {len(case.expect)} gold edits survived the applier"
-        )
+        issues.append(f"only {len(applied)} of {len(case.expect)} gold edits survived the applier")
     if prepared.strip() != case.prepared:
         issues.append(
             "applying the gold edits does not reproduce the prepared text; "

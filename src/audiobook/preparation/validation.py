@@ -16,7 +16,6 @@ import re
 import unicodedata
 
 
-
 _PAREN_RE = re.compile(r"\([^()]*\)")
 _NUMERIC_REFERENCE_RE = re.compile(r"\[(?:\s*\d+[a-z]?(?:\s*[-,;]\s*\d+[a-z]?)*\s*)\]")
 _YEAR_RE = re.compile(r"\b(?:1[5-9]|20)\d{2}[a-z]?\b", re.IGNORECASE)
@@ -111,9 +110,7 @@ def _retention(source: list[str], prepared: list[str]) -> float:
         return 1.0
     source_counts = Counter(source)
     prepared_counts = Counter(prepared)
-    retained = sum(
-        min(count, prepared_counts[token]) for token, count in source_counts.items()
-    )
+    retained = sum(min(count, prepared_counts[token]) for token, count in source_counts.items())
     return retained / sum(source_counts.values())
 
 

@@ -211,10 +211,7 @@ def match_chunk_loudness(
     cap at ``sample_peak_dbfs``; no compression or limiting is applied.
     """
 
-    segments = [
-        np.asarray(segment, dtype=np.float32).reshape(-1)
-        for segment in audio_segments
-    ]
+    segments = [np.asarray(segment, dtype=np.float32).reshape(-1) for segment in audio_segments]
     measurements = [active_speech_rms(segment, sample_rate) for segment in segments]
     voiced = [measured for measured in measurements if measured > 0.0]
     target = float(np.median(voiced)) if voiced else 0.0
@@ -245,9 +242,7 @@ def match_chunk_loudness(
 
         matched.append(np.multiply(segment, gain, dtype=np.float32))
         # Plain scaling changes RMS by exactly the gain factor.
-        diagnostics.append(
-            ChunkLoudnessDiagnostics(measured, measured * gain, gain_db)
-        )
+        diagnostics.append(ChunkLoudnessDiagnostics(measured, measured * gain, gain_db))
     return LoudnessMatchResult(matched, diagnostics)
 
 
@@ -328,9 +323,7 @@ def _run_ffmpeg(arguments: Sequence[str], cwd: Path) -> subprocess.CompletedProc
     command = ["ffmpeg", "-y", "-hide_banner", "-nostats", *arguments]
     completed = subprocess.run(command, cwd=cwd, capture_output=True, text=True)
     if completed.returncode != 0:
-        raise RuntimeError(
-            f"FFmpeg failed ({' '.join(command)}):\n{completed.stderr.strip()}"
-        )
+        raise RuntimeError(f"FFmpeg failed ({' '.join(command)}):\n{completed.stderr.strip()}")
     return completed
 
 
@@ -363,16 +356,12 @@ def _parse_loudnorm_measurements(stderr: str) -> dict[str, float]:
     start = stderr.rfind("{")
     end = stderr.find("}", start)
     if start == -1 or end == -1:
-        raise RuntimeError(
-            "FFmpeg loudnorm analysis produced no measurement JSON."
-        )
+        raise RuntimeError("FFmpeg loudnorm analysis produced no measurement JSON.")
     try:
         payload = json.loads(stderr[start : end + 1])
         return {key: float(payload[key]) for key in _LOUDNORM_MEASUREMENT_KEYS}
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-        raise RuntimeError(
-            f"FFmpeg loudnorm measurements could not be parsed: {exc}"
-        ) from exc
+        raise RuntimeError(f"FFmpeg loudnorm measurements could not be parsed: {exc}") from exc
 
 
 def measure_output_loudness(temp_dir: Path, file_list_name: str) -> dict[str, float]:

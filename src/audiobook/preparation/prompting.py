@@ -269,8 +269,7 @@ def build_messages(request: PreparationRequest) -> list[dict[str, str]]:
         {
             "role": "user",
             "content": "List the edits this passage needs and return the "
-            "schema-defined JSON:\n"
-            + json.dumps(payload, ensure_ascii=False, indent=2),
+            "schema-defined JSON:\n" + json.dumps(payload, ensure_ascii=False, indent=2),
         },
     ]
 

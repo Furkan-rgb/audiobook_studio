@@ -24,9 +24,7 @@ from ..config import (
 
 
 RE_SCENE_BREAK = re.compile(r"^(?:(?:\*\s*){3,}|-{3,}|_{3,}|~{3,})$")
-RE_SENTENCE_BOUNDARY = re.compile(
-    r"(?<=[.!?])(?:[\"'”’)]*)\s+(?=[A-Z0-9\"'“‘(\[])"
-)
+RE_SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])(?:[\"'”’)]*)\s+(?=[A-Z0-9\"'“‘(\[])")
 RE_DIALOGUE = re.compile(r"^(?:[\"'“‘]|[-—]\s)")
 # Clause pauses inside a sentence too long to narrate as one generation: the
 # whitespace that follows a comma, semicolon, colon, or em dash. The delimiter
@@ -210,9 +208,7 @@ def _make_text_units(content: str, max_chars: int) -> list[TextUnit]:
                 units.append(
                     TextUnit(
                         text=part,
-                        boundary_after=(
-                            "paragraph" if index == len(parts) - 1 else "continuation"
-                        ),
+                        boundary_after=("paragraph" if index == len(parts) - 1 else "continuation"),
                         paragraph_index=paragraph_index,
                         is_dialogue=bool(RE_DIALOGUE.match(part)),
                     )
@@ -260,9 +256,7 @@ def make_narration_chunks(
 ) -> list[NarrationChunk]:
     """Create coherent chunks from sections, paragraphs, then sentences."""
     if min_chars <= 0 or target_chars < min_chars or target_chars > max_chars:
-        raise ValueError(
-            "Chunk sizes must satisfy 0 < min_chars <= target_chars <= max_chars"
-        )
+        raise ValueError("Chunk sizes must satisfy 0 < min_chars <= target_chars <= max_chars")
 
     units = _make_text_units(content, max_chars)
     chunks: list[NarrationChunk] = []

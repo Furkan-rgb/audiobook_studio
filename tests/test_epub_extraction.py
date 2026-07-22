@@ -91,12 +91,8 @@ class EpubExtractionTests(unittest.TestCase):
         chapters = parse_epub_to_chapters(path)
 
         self.assertEqual([title for title, _ in chapters], ["Chapter One", "Chapter Two"])
-        self.assertEqual(
-            chapters[0][1], "## Chapter One\n\nThe first chapter opens quietly."
-        )
-        self.assertEqual(
-            chapters[1][1], "## Chapter Two\n\nThe second chapter answers it."
-        )
+        self.assertEqual(chapters[0][1], "## Chapter One\n\nThe first chapter opens quietly.")
+        self.assertEqual(chapters[1][1], "## Chapter Two\n\nThe second chapter answers it.")
 
     def test_ncx_navigation_spans_documents_and_skips_apparatus(self):
         """EPUB 2 books keep spine order, and a contents page is not narrated."""
@@ -152,8 +148,7 @@ class EpubExtractionTests(unittest.TestCase):
     def test_spine_documents_are_chapters_without_a_navigation_map(self):
         def document(sentence: str) -> str:
             return (
-                '<html xmlns="http://www.w3.org/1999/xhtml"><body>'
-                f"<p>{sentence}</p></body></html>"
+                f'<html xmlns="http://www.w3.org/1999/xhtml"><body><p>{sentence}</p></body></html>'
             )
 
         path = _write_epub(
@@ -175,8 +170,9 @@ class EpubExtractionTests(unittest.TestCase):
 
         chapters = parse_epub_to_chapters(path)
 
-        self.assertEqual([content for _, content in chapters],
-                         ["The first section.", "The second section."])
+        self.assertEqual(
+            [content for _, content in chapters], ["The first section.", "The second section."]
+        )
         # linear="no" material is shown out of band by readers, and skipped here.
         self.assertNotIn("Cover image caption.", "".join(c for _, c in chapters))
 
@@ -210,7 +206,7 @@ class EpubExtractionTests(unittest.TestCase):
             },
         )
 
-        (_title, content), = parse_epub_to_chapters(path)
+        ((_title, content),) = parse_epub_to_chapters(path)
 
         self.assertNotIn("ignored()", content)
         self.assertNotIn("color: red", content)

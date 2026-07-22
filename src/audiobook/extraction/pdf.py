@@ -94,9 +94,7 @@ def _select_bookmarks(
     if entries:
         top_level = min(level for level, _title, _page in entries)
         top_entries = [
-            (title, page_number)
-            for level, title, page_number in entries
-            if level == top_level
+            (title, page_number) for level, title, page_number in entries if level == top_level
         ]
         # A single top-level entry describes the book, not its chapters; drop
         # to the heading fallback rather than narrate the whole PDF as "Cover".
@@ -185,9 +183,7 @@ def parse_pdf_to_chapters(pdf_path: Path) -> list[tuple[str, str]]:
         prelude_titles = {"preface", "introduction", "foreword", "prologue"}
         prelude_pages: dict[str, tuple[str, int]] = {}
         for page_index in range(first_chapter_page - 1):
-            lines = [
-                line.strip() for line in document[page_index].get_text().splitlines()
-            ]
+            lines = [line.strip() for line in document[page_index].get_text().splitlines()]
             for line in lines[:8]:
                 if line.lower() in prelude_titles:
                     prelude_pages[line.lower()] = (line.title(), page_index + 1)
@@ -224,9 +220,7 @@ def parse_pdf_to_chapters(pdf_path: Path) -> list[tuple[str, str]]:
         page_chunks=True,
     )
     text_by_page = {
-        item["metadata"]["page_number"]: RE_STANDALONE_PAGE_NUMBER.sub(
-            "", item["text"]
-        )
+        item["metadata"]["page_number"]: RE_STANDALONE_PAGE_NUMBER.sub("", item["text"])
         for item in page_chunks
     }
 
@@ -235,10 +229,7 @@ def parse_pdf_to_chapters(pdf_path: Path) -> list[tuple[str, str]]:
         next_boundaries = [page for page in structural_pages if page > start_page]
         end_page = next_boundaries[0] - 1 if next_boundaries else document.page_count
         markdown = _join_markdown_pages(
-            [
-                text_by_page.get(page_number, "")
-                for page_number in range(start_page, end_page + 1)
-            ]
+            [text_by_page.get(page_number, "") for page_number in range(start_page, end_page + 1)]
         )
         content = clean_text_segment(markdown)
         spoken_title = re.sub(r"^\d+\s+", "", title).strip()

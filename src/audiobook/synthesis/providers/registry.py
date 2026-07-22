@@ -39,15 +39,11 @@ def register_synthesis_provider(
     describe = getattr(factory, "describe", None)
     if not callable(describe):
         raise TypeError(
-            f"Synthesis provider {name!r} must implement describe() -> "
-            "SynthesisDescriptor"
+            f"Synthesis provider {name!r} must implement describe() -> SynthesisDescriptor"
         )
     descriptor = describe()
     if not isinstance(descriptor, SynthesisDescriptor):
-        raise TypeError(
-            f"Synthesis provider {name!r}.describe() must return a "
-            "SynthesisDescriptor"
-        )
+        raise TypeError(f"Synthesis provider {name!r}.describe() must return a SynthesisDescriptor")
 
     _PROVIDERS[key] = factory
 
@@ -80,9 +76,7 @@ def synthesis_descriptor(name: str) -> SynthesisDescriptor:
 def synthesis_descriptors() -> tuple[SynthesisDescriptor, ...]:
     """Descriptors for every registered backend, in display order."""
 
-    return tuple(
-        synthesis_descriptor(name) for name in available_synthesis_providers()
-    )
+    return tuple(synthesis_descriptor(name) for name in available_synthesis_providers())
 
 
 def create_synthesis_provider(name: str, **configuration: Any) -> SynthesisProvider:

@@ -82,9 +82,7 @@ def _loose_voice(path: Path) -> VoiceEntry:
 
     transcript_path = path.with_suffix(".txt")
     ref_text = (
-        transcript_path.read_text(encoding="utf-8").strip()
-        if transcript_path.exists()
-        else None
+        transcript_path.read_text(encoding="utf-8").strip() if transcript_path.exists() else None
     )
     return VoiceEntry(
         spec=str(path),
@@ -264,9 +262,7 @@ def migrate_loose_recordings(voices_dir: Path = VOICES_DIR) -> list[str]:
         if voice_dir.exists():
             continue
         sidecar = child.with_suffix(".txt")
-        ref_text = (
-            sidecar.read_text(encoding="utf-8").strip() if sidecar.exists() else ""
-        )
+        ref_text = sidecar.read_text(encoding="utf-8").strip() if sidecar.exists() else ""
         voice_dir.mkdir(parents=True)
         child.rename(voice_dir / f"reference{child.suffix.lower()}")
         _write_reference_metadata(
@@ -310,9 +306,7 @@ def list_audiobooks(output_dir: Path = DEFAULT_OUTPUT_DIR) -> list[Path]:
 
     if not output_dir.exists():
         return []
-    return sorted(
-        output_dir.rglob("*.m4b"), key=lambda p: p.stat().st_mtime, reverse=True
-    )
+    return sorted(output_dir.rglob("*.m4b"), key=lambda p: p.stat().st_mtime, reverse=True)
 
 
 __all__ = [

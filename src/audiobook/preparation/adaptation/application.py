@@ -113,10 +113,7 @@ def apply_edits(
         if empties_paragraph(source, start, end, edit.replacement):
             warnings.append(_rejection(edit, "it would leave its paragraph empty"))
             continue
-        if any(
-            start < other_end and other_start < end
-            for other_start, other_end, _ in accepted
-        ):
+        if any(start < other_end and other_start < end for other_start, other_end, _ in accepted):
             warnings.append(_rejection(edit, "it overlaps an earlier edit"))
             continue
 
@@ -153,10 +150,7 @@ def apply_edits(
     # heaviest cutter until what remains clears the floor: dropping edits
     # always converges, because the untouched source retains everything.
     prepared = splice_all(accepted)
-    while (
-        accepted
-        and lexical_retention(source, prepared) < policy.minimum_lexical_retention
-    ):
+    while accepted and lexical_retention(source, prepared) < policy.minimum_lexical_retention:
         victim = max(
             accepted,
             key=lambda item: words_dropped(source[item[0] : item[1]], item[2].replacement),

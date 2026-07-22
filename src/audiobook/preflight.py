@@ -7,9 +7,10 @@ before.  This module asks the same questions before any work starts, reading
 the answers from the same config the stages will use.
 
 Checks are ordered from environment to configuration, and none of them loads a
-model or decodes audio: preflight must cost seconds, not minutes.  The single
-exception is a missing Ollama model, which is pulled here — waiting for that
-download before extraction beats discovering it afterwards.
+model or decodes audio: a preflight with everything in place costs seconds.
+The exception is a missing model — the Ollama model, a TTS checkpoint, the
+Whisper ASR model — which is downloaded here, with progress shown: waiting for
+the download up front beats a run stalling on it after extraction already ran.
 """
 
 from __future__ import annotations
@@ -76,8 +77,7 @@ def _check_packages() -> CheckResult:
     return CheckResult(
         "python packages",
         FAIL,
-        f"Missing: {', '.join(missing)}. Run: .venv/bin/python -m pip install "
-        "-r requirements.txt",
+        f"Missing: {', '.join(missing)}. Run: .venv/bin/python -m pip install -r requirements.txt",
     )
 
 
@@ -90,8 +90,7 @@ def _check_cuda() -> CheckResult:
         return CheckResult(
             "CUDA GPU",
             FAIL,
-            "No CUDA device. TTS synthesis, voice design and cloning all "
-            "require one.",
+            "No CUDA device. TTS synthesis, voice design and cloning all require one.",
         )
     properties = torch.cuda.get_device_properties(0)
     total_gb = properties.total_memory / 1024**3
@@ -100,31 +99,60 @@ def _check_cuda() -> CheckResult:
         return CheckResult(
             "CUDA GPU",
             WARN,
-            f"{detail} — under 6 GB; a 1.7B checkpoint plus generation may "
-            "not fit.",
+            f"{detail} — under 6 GB; a 1.7B checkpoint plus generation may not fit.",
         )
     return CheckResult("CUDA GPU", OK, detail)
 
 
+def _download_checkpoint(local_path: Path, remote_id: str) -> None:
+    """Fetch the full snapshot of ``remote_id`` into ``local_path``, atomically.
+
+    huggingface_hub renders a tqdm bar per file while it downloads.  The
+    snapshot lands in a sibling ``.partial`` directory and is renamed only once
+    complete, so an interrupted download cannot leave a half-written checkpoint
+    that the next preflight's ``local_path.exists()`` would take for a real
+    one.  The partial directory keeps huggingface_hub's resume metadata, so a
+    retried preflight continues the download instead of restarting it.
+    """
+
+    from huggingface_hub import snapshot_download
+
+    partial = local_path.with_name(local_path.name + ".partial")
+    snapshot_download(remote_id, local_dir=partial)
+    # Resume metadata has served its purpose; the checkpoint itself is complete.
+    shutil.rmtree(partial / ".cache", ignore_errors=True)
+    partial.rename(local_path)
+
+
 def _check_checkpoint(name: str, local_path: Path, remote_id: str) -> CheckResult:
-    """A missing local checkpoint is a surprise download, not an error."""
+    """A missing local checkpoint is downloaded now rather than mid-run.
+
+    Synthesis would fetch it on first use anyway, but that download lands in
+    the Hugging Face cache instead of ``local_path`` — so the checkpoint would
+    read as missing on every later preflight — and it stalls the run right
+    when the first chapter is about to speak.  A failed download is a warning,
+    not an error, because that lazy first-use path still remains.
+    """
 
     if local_path.exists():
         return CheckResult(name, OK, str(local_path))
-    return CheckResult(
-        name,
-        WARN,
-        f"{local_path} not found; will download {remote_id} from Hugging Face "
-        "on first use.",
-    )
+    print(f"  {name}: downloading {remote_id} to {local_path}", flush=True)
+    try:
+        _download_checkpoint(local_path, remote_id)
+    except Exception as exc:  # noqa: BLE001 - any failure means "not downloaded"
+        return CheckResult(
+            name,
+            WARN,
+            f"{local_path} not found and downloading {remote_id} failed "
+            f"({exc}); will retry from Hugging Face on first use.",
+        )
+    return CheckResult(name, OK, f"{local_path} — downloaded on this run")
 
 
 def _checkpoint_checks() -> list[CheckResult]:
     if TTS_BACKEND == "voice_clone":
         return [
-            _check_checkpoint(
-                "clone checkpoint", LOCAL_VOICE_CLONE_MODEL_PATH, VOICE_CLONE_MODEL
-            ),
+            _check_checkpoint("clone checkpoint", LOCAL_VOICE_CLONE_MODEL_PATH, VOICE_CLONE_MODEL),
             _check_checkpoint(
                 "design checkpoint", LOCAL_VOICE_DESIGN_MODEL_PATH, VOICE_DESIGN_MODEL
             ),
@@ -135,8 +163,7 @@ def _checkpoint_checks() -> list[CheckResult]:
         CheckResult(
             "TTS backend",
             FAIL,
-            f"Unknown TTS_BACKEND {TTS_BACKEND!r}; expected 'voice_clone' or "
-            "'custom_voice'.",
+            f"Unknown TTS_BACKEND {TTS_BACKEND!r}; expected 'voice_clone' or 'custom_voice'.",
         )
     ]
 
@@ -231,8 +258,22 @@ def _check_preparation_provider(
     return CheckResult(name, OK, base_url)
 
 
+# What transcription actually loads from the Whisper repository.  The repo
+# ships the same weights several times over — fp16 and fp32 safetensors, .bin,
+# flax — and transformers reads only the consolidated fp16 ``model.safetensors``
+# plus the small config and tokenizer files, so these patterns fetch ~3 GB
+# instead of the ~25 GB full snapshot.
+_ASR_FILE_PATTERNS = ["*.json", "*.txt", "model.safetensors"]
+
+
 def _check_asr_cache() -> CheckResult:
-    """Whisper downloads on first use; say so before a run stalls on it."""
+    """Whisper downloads on first use; fetch it now instead of stalling a run.
+
+    The download goes to the Hugging Face cache — where ``from_pretrained``
+    will look for it — not to a local directory, and huggingface_hub shows a
+    tqdm bar per file.  A failed download is a warning, not an error: the
+    first imported recording still fetches lazily as before.
+    """
 
     if not REFERENCE_TRANSCRIBE:
         return CheckResult("ASR model", OK, "disabled (REFERENCE_TRANSCRIBE = False)")
@@ -244,11 +285,19 @@ def _check_asr_cache() -> CheckResult:
         return CheckResult("ASR model", WARN, f"Could not inspect the cache for {ASR_MODEL}.")
     if isinstance(cached, str):
         return CheckResult("ASR model", OK, f"{ASR_MODEL} (cached)")
-    return CheckResult(
-        "ASR model",
-        WARN,
-        f"{ASR_MODEL} not cached; the first imported recording will download it.",
-    )
+    print(f"  ASR model: downloading {ASR_MODEL} to the Hugging Face cache", flush=True)
+    try:
+        from huggingface_hub import snapshot_download
+
+        snapshot_download(ASR_MODEL, allow_patterns=_ASR_FILE_PATTERNS)
+    except Exception as exc:  # noqa: BLE001 - any failure means "not downloaded"
+        return CheckResult(
+            "ASR model",
+            WARN,
+            f"{ASR_MODEL} is not cached and downloading it failed ({exc}); "
+            "the first imported recording will retry.",
+        )
+    return CheckResult("ASR model", OK, f"{ASR_MODEL} — downloaded on this run")
 
 
 def _check_output_dir(output_dir: Path = DEFAULT_OUTPUT_DIR) -> CheckResult:
@@ -284,8 +333,7 @@ def format_report(results: list[CheckResult]) -> str:
     marks = {OK: "✓", WARN: "!", FAIL: "✗"}
     width = max(len(result.name) for result in results)
     lines = [
-        f" {marks[result.status]} {result.name.ljust(width)}  {result.detail}"
-        for result in results
+        f" {marks[result.status]} {result.name.ljust(width)}  {result.detail}" for result in results
     ]
     failures = sum(result.status == FAIL for result in results)
     warnings = sum(result.status == WARN for result in results)

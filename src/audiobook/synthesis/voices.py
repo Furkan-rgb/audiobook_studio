@@ -125,11 +125,18 @@ def load_reference_audio(
         decoded = Path(temp_dir) / "reference.wav"
         subprocess.run(
             [
-                "ffmpeg", "-y", "-v", "error",
-                "-i", str(path),
-                "-ac", "1",
-                "-ar", str(sample_rate),
-                "-c:a", "pcm_s16le",
+                "ffmpeg",
+                "-y",
+                "-v",
+                "error",
+                "-i",
+                str(path),
+                "-ac",
+                "1",
+                "-ar",
+                str(sample_rate),
+                "-c:a",
+                "pcm_s16le",
                 str(decoded),
             ],
             check=True,
@@ -199,9 +206,7 @@ def _load_voice_folder(voice_dir: Path, *, sample_rate: int) -> ReferenceVoice:
     )
 
 
-def _load_audio_file(
-    path: Path, *, sample_rate: int, transcribe_missing: bool
-) -> ReferenceVoice:
+def _load_audio_file(path: Path, *, sample_rate: int, transcribe_missing: bool) -> ReferenceVoice:
     """Load a bare recording and recover its transcript if one is not on disk.
 
     A recovered transcript is cached beside the audio so it is reviewed once,

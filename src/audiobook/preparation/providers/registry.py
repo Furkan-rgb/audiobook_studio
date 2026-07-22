@@ -34,14 +34,12 @@ def register_provider(
     describe = getattr(factory, "describe", None)
     if not callable(describe):
         raise TypeError(
-            f"Preparation provider {name!r} must implement describe() -> "
-            "ProviderDescriptor"
+            f"Preparation provider {name!r} must implement describe() -> ProviderDescriptor"
         )
     descriptor = describe()
     if not isinstance(descriptor, ProviderDescriptor):
         raise TypeError(
-            f"Preparation provider {name!r}.describe() must return a "
-            "ProviderDescriptor"
+            f"Preparation provider {name!r}.describe() must return a ProviderDescriptor"
         )
 
     _PROVIDERS[key] = factory

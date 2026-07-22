@@ -195,9 +195,7 @@ def prepare(case, edits):
 
 def judge(case, edits):
     prepared, applied, warnings = prepare(case, edits)
-    return score_case(
-        case, prepared, proposed=list(edits), applied=applied, warnings=warnings
-    )
+    return score_case(case, prepared, proposed=list(edits), applied=applied, warnings=warnings)
 
 
 class ScriptedProvider:
@@ -293,9 +291,7 @@ class CorpusTests(unittest.TestCase):
     def test_shipped_corpus_is_valid_ground_truth(self):
         cases = load_corpus()
         tiers = Counter(case.tier for case in cases)
-        categories = Counter(
-            category for case in cases for category in case.categories
-        )
+        categories = Counter(category for case in cases for category in case.categories)
 
         # load_corpus lints every case, so reaching here already proves each
         # gold answer is reproduced by the production applier.
@@ -321,9 +317,7 @@ class CorpusTests(unittest.TestCase):
         )
 
     def test_lint_rejects_a_gold_answer_the_applier_does_not_reproduce(self):
-        case = case_from_dict(
-            citation_payload(prepared="The finding remained central.")
-        )
+        case = case_from_dict(citation_payload(prepared="The finding remained central."))
         issues = lint_case(case)
         self.assertTrue(
             any("does not reproduce the prepared text" in issue for issue in issues),
@@ -357,9 +351,7 @@ class CorpusTests(unittest.TestCase):
 
     def test_lint_rejects_a_trap_that_overlaps_an_expected_edit(self):
         case = case_from_dict(
-            citation_payload(
-                traps=[{"span": "(Smith 1999)", "label": "contradictory"}]
-            )
+            citation_payload(traps=[{"span": "(Smith 1999)", "label": "contradictory"}])
         )
         self.assertTrue(
             any("overlaps expected edit" in issue for issue in lint_case(case)),
@@ -553,9 +545,7 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(score.output_matches_gold)
 
     def test_a_provider_error_scores_zero_without_crashing(self):
-        score = score_case(
-            CITATION_CASE, CITATION_CASE.source, error="TimeoutError: too slow"
-        )
+        score = score_case(CITATION_CASE, CITATION_CASE.source, error="TimeoutError: too slow")
 
         self.assertEqual(score.score, 0.0)
         self.assertFalse(score.fidelity_pass)
@@ -590,9 +580,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
         return report, providers
 
     def test_a_model_that_changes_the_authors_words_ranks_last(self):
-        report, providers = self.run_benchmark(
-            ("model-oracle", "model-lazy", "model-vandal")
-        )
+        report, providers = self.run_benchmark(("model-oracle", "model-lazy", "model-vandal"))
         ranked = [item.model for item in report.ranked]
         by_model = {item.model: item for item in report.models_reports}
 
@@ -612,22 +600,19 @@ class BenchmarkRunnerTests(unittest.TestCase):
 
         self.assertEqual(by_tier["trap"].score, 0.0)
         self.assertEqual(by_tier["noop"].score, 1.0)
-        self.assertEqual([label for label, _count in item.trap_failures],
-                         ["historical-year-must-stay"])
+        self.assertEqual(
+            [label for label, _count in item.trap_failures], ["historical-year-must-stay"]
+        )
 
     def test_determinism_notices_a_model_that_changes_its_mind(self):
-        report, _providers = self.run_benchmark(
-            ("model-flaky", "model-oracle"), repetitions=2
-        )
+        report, _providers = self.run_benchmark(("model-flaky", "model-oracle"), repetitions=2)
         by_model = {item.model: item for item in report.models_reports}
 
         self.assertEqual(by_model["model-oracle"].determinism, 1.0)
         self.assertLess(by_model["model-flaky"].determinism, 1.0)
 
     def test_repetitions_run_under_a_sequential_seed_shared_across_models(self):
-        report, providers = self.run_benchmark(
-            ("model-oracle", "model-lazy"), repetitions=3
-        )
+        report, providers = self.run_benchmark(("model-oracle", "model-lazy"), repetitions=3)
 
         # Two cases per repetition, so each repetition's seed appears twice, and
         # the first repetition runs under the base seed rather than base + 1.
@@ -637,9 +622,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
         # repetition, deterministic across models.
         self.assertEqual(providers[0].seeds_seen, providers[1].seeds_seen)
         self.assertEqual(seed_for_repetition(1), BASE_SEED)
-        self.assertEqual(
-            [seed_for_repetition(rep) for rep in (1, 2, 3)], [42, 43, 44]
-        )
+        self.assertEqual([seed_for_repetition(rep) for rep in (1, 2, 3)], [42, 43, 44])
         # And each run records the seed it generated under.
         for repetition, expected in ((1, 42), (2, 43), (3, 44)):
             self.assertEqual(
@@ -648,9 +631,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
             )
 
     def test_the_report_records_native_sampling_and_the_seed_sequence(self):
-        report, _providers = self.run_benchmark(
-            ("model-oracle", "model-vandal"), repetitions=2
-        )
+        report, _providers = self.run_benchmark(("model-oracle", "model-vandal"), repetitions=2)
         payload = json.loads(report.json_path.read_text(encoding="utf-8"))
         sampling = payload["configuration"]["sampling"]
 
@@ -663,9 +644,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(len(sampling["omitted"]), 8)
         self.assertEqual(payload["configuration"]["prompt_version"], DEFAULT_PROMPT_VERSION)
         # The seed is recorded on every run for reproducing a single attempt.
-        self.assertEqual(
-            {run["seed"] for run in payload["runs"] if run["repetition"] == 1}, {42}
-        )
+        self.assertEqual({run["seed"] for run in payload["runs"] if run["repetition"] == 1}, {42})
         # And the explicit provider budgets are recorded per model.
         options = payload["models"][0]["provider_options"]
         self.assertIn("num_ctx", options)
@@ -702,9 +681,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
         )
 
     def test_it_writes_a_json_artifact_and_a_readable_report(self):
-        report, _providers = self.run_benchmark(
-            ("model-oracle", "model-vandal")
-        )
+        report, _providers = self.run_benchmark(("model-oracle", "model-vandal"))
         payload = json.loads(report.json_path.read_text(encoding="utf-8"))
         markdown = report.markdown_path.read_text(encoding="utf-8")
 
@@ -722,27 +699,20 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertIn("Traps sprung", markdown)
 
     def test_every_model_is_asked_exactly_the_same_questions(self):
-        _report, providers = self.run_benchmark(
-            ("model-oracle", "model-lazy"), repetitions=2
-        )
+        _report, providers = self.run_benchmark(("model-oracle", "model-lazy"), repetitions=2)
         # One provider per variant, loaded once and kept for both repetitions,
         # so each model is asked all four of its case runs (two cases, twice)
         # without being reloaded between them.
         self.assertEqual([provider.calls for provider in providers], [4, 4])
-        self.assertEqual(
-            [provider.availability_checks for provider in providers], [1, 1]
-        )
+        self.assertEqual([provider.availability_checks for provider in providers], [1, 1])
 
     def test_each_variant_is_loaded_once_for_all_repetitions(self):
         # A model is taken to exhaustion before the next loads, so a two-model,
         # two-repetition run creates two providers, not four: no model is
         # unloaded and reloaded between its repetitions.
-        _report, providers = self.run_benchmark(
-            ("model-oracle", "model-lazy"), repetitions=2
-        )
+        _report, providers = self.run_benchmark(("model-oracle", "model-lazy"), repetitions=2)
         self.assertEqual(len(providers), 2)
-        self.assertEqual([provider.model for provider in providers],
-                         ["model-oracle", "model-lazy"])
+        self.assertEqual([provider.model for provider in providers], ["model-oracle", "model-lazy"])
 
     def test_thinking_scores_each_mode_as_its_own_entry(self):
         seen: list[tuple[str, bool]] = []
@@ -887,14 +857,10 @@ class BenchmarkVariantTests(unittest.TestCase):
             [variant.label for variant in variants],
             ["model-a", "model-a +think", "model-b", "model-b +think"],
         )
-        self.assertEqual(
-            [variant.think for variant in variants], [False, True, False, True]
-        )
+        self.assertEqual([variant.think for variant in variants], [False, True, False, True])
 
     def test_a_model_without_thinking_keeps_only_its_direct_run(self):
-        variants = self.options(
-            think_modes=(False, True), no_think_models=("model-b",)
-        ).variants
+        variants = self.options(think_modes=(False, True), no_think_models=("model-b",)).variants
         self.assertEqual(
             [variant.label for variant in variants],
             ["model-a", "model-a +think", "model-b"],
@@ -933,9 +899,7 @@ class BenchmarkCommandLineTests(unittest.TestCase):
         self.assertTrue(filtered.quick)
 
     def test_it_builds_options_the_runner_accepts(self):
-        options = cli._benchmark_options(
-            cli.parse_args(["benchmark", "--category", "no_edit"])
-        )
+        options = cli._benchmark_options(cli.parse_args(["benchmark", "--category", "no_edit"]))
 
         self.assertEqual(options.categories, ("no_edit",))
         self.assertEqual(options.provider_name, "ollama")
@@ -966,9 +930,10 @@ class BenchmarkCommandLineTests(unittest.TestCase):
         cli_report = MagicMock()
         cli_report.models_reports = [MagicMock(errored_cases=0)]
         cli_report.runs = [MagicMock()]
-        with patch(
-            "audiobook.cli.benchmark_preparation", return_value=cli_report
-        ) as cli_runner, patch("audiobook.cli.print_summary"):
+        with (
+            patch("audiobook.cli.benchmark_preparation", return_value=cli_report) as cli_runner,
+            patch("audiobook.cli.print_summary"),
+        ):
             cli.main(["benchmark", "--provider", "fake", "--models", "model-a"])
         cli_runner.assert_called_once()
 
@@ -977,8 +942,16 @@ class BenchmarkCommandLineTests(unittest.TestCase):
         # options without any network call.
         options = cli._benchmark_options(
             cli.parse_args(
-                ["benchmark", "--provider", "fake", "--think", "both",
-                 "--models", "model-a", "model-b"]
+                [
+                    "benchmark",
+                    "--provider",
+                    "fake",
+                    "--think",
+                    "both",
+                    "--models",
+                    "model-a",
+                    "model-b",
+                ]
             )
         )
 

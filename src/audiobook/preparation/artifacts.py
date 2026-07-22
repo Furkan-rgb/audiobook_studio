@@ -29,9 +29,7 @@ def sha256_file(path: str | Path, *, chunk_size: int = 1024 * 1024) -> str:
     return digest.hexdigest()
 
 
-def source_metadata_for_path(
-    path: str | Path, *, media_type: str | None = None
-) -> SourceMetadata:
+def source_metadata_for_path(path: str | Path, *, media_type: str | None = None) -> SourceMetadata:
     source_path = Path(path)
     stat = source_path.stat()
     return SourceMetadata(
@@ -43,9 +41,9 @@ def source_metadata_for_path(
 
 
 def _canonical_hash(value: Any) -> str:
-    encoded = json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -111,9 +109,7 @@ def validate_artifact(book: PreparedBook) -> None:
         issues.append("provider metadata must include name and model")
     if not book.created_at:
         issues.append("created_at is blank")
-    if book.source_metadata.sha256 is not None and not _is_sha256(
-        book.source_metadata.sha256
-    ):
+    if book.source_metadata.sha256 is not None and not _is_sha256(book.source_metadata.sha256):
         issues.append("source_metadata.sha256 is not a lowercase SHA256 digest")
 
     chapter_indexes: set[int] = set()
@@ -183,9 +179,7 @@ def validate_artifact(book: PreparedBook) -> None:
         raise ArtifactValidationError("Invalid prepared-book artifact: " + "; ".join(issues))
 
 
-def save_prepared_book(
-    book: PreparedBook, path: str | Path, *, validate: bool = True
-) -> Path:
+def save_prepared_book(book: PreparedBook, path: str | Path, *, validate: bool = True) -> Path:
     """Hash, optionally validate, and atomically replace a schema-v1 JSON artifact.
 
     ``validate`` runs a full :func:`validate_artifact` pass before writing.
@@ -211,9 +205,7 @@ def save_prepared_book(
             delete=False,
         ) as handle:
             temporary_path = Path(handle.name)
-            json.dump(
-                book.to_dict(), handle, ensure_ascii=False, indent=2, allow_nan=False
-            )
+            json.dump(book.to_dict(), handle, ensure_ascii=False, indent=2, allow_nan=False)
             handle.write("\n")
             handle.flush()
             os.fsync(handle.fileno())
@@ -250,11 +242,14 @@ atomic_save_prepared_book = save_prepared_book
 def render_prepared_markdown(book: PreparedBook) -> str:
     """Render the prepared script without injecting any new spoken headings."""
 
-    return "\n\n".join(
-        chapter.prepared_text
-        for chapter in sorted(book.chapters, key=lambda item: item.index)
-        if chapter.prepared_text
-    ).rstrip() + "\n"
+    return (
+        "\n\n".join(
+            chapter.prepared_text
+            for chapter in sorted(book.chapters, key=lambda item: item.index)
+            if chapter.prepared_text
+        ).rstrip()
+        + "\n"
+    )
 
 
 def save_prepared_markdown(book: PreparedBook, path: str | Path) -> Path:

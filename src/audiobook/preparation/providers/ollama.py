@@ -101,9 +101,7 @@ def _configured() -> dict[str, Any]:
     return dict(entry) if isinstance(entry, dict) else {}
 
 
-def fetch_model_capabilities(
-    base_url: str, model: str, *, timeout: float = 15.0
-) -> set[str]:
+def fetch_model_capabilities(base_url: str, model: str, *, timeout: float = 15.0) -> set[str]:
     """The capabilities Ollama declares for a model, e.g. ``{"thinking"}``.
 
     Best-effort: any failure — server down, model absent, malformed answer —
@@ -122,8 +120,16 @@ def fetch_model_capabilities(
     try:
         with urlopen(request, timeout=timeout) as response:
             parsed = json.loads(response.read(_MAX_RESPONSE_BYTES).decode("utf-8"))
-    except (HTTPError, URLError, TimeoutError, socket.timeout, ConnectionError,
-            UnicodeDecodeError, json.JSONDecodeError, ValueError):
+    except (
+        HTTPError,
+        URLError,
+        TimeoutError,
+        socket.timeout,
+        ConnectionError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        ValueError,
+    ):
         return set()
     capabilities = parsed.get("capabilities") if isinstance(parsed, dict) else None
     if not isinstance(capabilities, list):
@@ -303,8 +309,7 @@ class OllamaProvider:
         except HTTPError as exc:
             detail = exc.read(4096).decode("utf-8", errors="replace").strip()
             raise ProviderResponseError(
-                f"Ollama returned HTTP {exc.code} for {endpoint}: "
-                f"{detail or exc.reason}"
+                f"Ollama returned HTTP {exc.code} for {endpoint}: {detail or exc.reason}"
             ) from exc
         except (URLError, TimeoutError, socket.timeout, ConnectionError) as exc:
             raise ProviderUnavailableError(
@@ -375,9 +380,7 @@ class OllamaProvider:
                             "Ollama /api/pull returned malformed JSON"
                         ) from exc
                     if not isinstance(event, dict):
-                        raise ProviderResponseError(
-                            "Ollama /api/pull events must be JSON objects"
-                        )
+                        raise ProviderResponseError("Ollama /api/pull events must be JSON objects")
                     if event.get("error"):
                         raise ProviderResponseError(
                             f"Ollama could not pull {self.model!r}: {event['error']}"
@@ -389,8 +392,7 @@ class OllamaProvider:
         except HTTPError as exc:
             detail = exc.read(4096).decode("utf-8", errors="replace").strip()
             raise ProviderResponseError(
-                f"Ollama returned HTTP {exc.code} pulling {self.model!r}: "
-                f"{detail or exc.reason}"
+                f"Ollama returned HTTP {exc.code} pulling {self.model!r}: {detail or exc.reason}"
             ) from exc
         except (URLError, TimeoutError, socket.timeout, ConnectionError) as exc:
             raise ProviderUnavailableError(

@@ -38,9 +38,7 @@ def parse_args():
     )
     parser.add_argument(
         "--model",
-        default=str(
-            LOCAL_TTS_MODEL_PATH if LOCAL_TTS_MODEL_PATH.exists() else TTS_MODEL
-        ),
+        default=str(LOCAL_TTS_MODEL_PATH if LOCAL_TTS_MODEL_PATH.exists() else TTS_MODEL),
         help="A Hugging Face model id or downloaded model directory.",
     )
     return parser.parse_args()

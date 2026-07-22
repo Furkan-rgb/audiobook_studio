@@ -39,23 +39,17 @@ class SynthesisDescriptor:
     label: str
     local: bool = False
     requires_cuda: bool = False
-    supports_design: bool = False          # persona text -> reference clip
-    supports_clone: bool = False           # reference clip -> reusable voice
-    supports_builtin_voice: bool = False   # named speaker baked into the model
+    supports_design: bool = False  # persona text -> reference clip
+    supports_clone: bool = False  # reference clip -> reusable voice
+    supports_builtin_voice: bool = False  # named speaker baked into the model
     builtin_voices: tuple[str, ...] = ()
     parameters: dict[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.name.strip():
             raise ValueError("Synthesis descriptor needs a name")
-        if not (
-            self.supports_design
-            or self.supports_clone
-            or self.supports_builtin_voice
-        ):
-            raise ValueError(
-                f"Synthesis backend {self.name!r} declares no capabilities"
-            )
+        if not (self.supports_design or self.supports_clone or self.supports_builtin_voice):
+            raise ValueError(f"Synthesis backend {self.name!r} declares no capabilities")
 
 
 class SynthesisError(RuntimeError):

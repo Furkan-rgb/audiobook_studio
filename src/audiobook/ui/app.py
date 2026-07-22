@@ -256,9 +256,7 @@ def _process_recording(upload: str | None):
         staged = Path(tempfile.mkdtemp(prefix="voice-staging-")) / source.name
         shutil.copyfile(source, staged)
         with gpu_slot():  # ASR runs on the GPU
-            voice = resolve_voice(
-                str(staged), transcribe_missing=REFERENCE_TRANSCRIBE
-            )
+            voice = resolve_voice(str(staged), transcribe_missing=REFERENCE_TRANSCRIBE)
         print(describe(voice))
         return {
             "path": str(staged),
@@ -344,9 +342,7 @@ def _voice_detail(spec: str | None):
     if entry is None:
         return None, "", "Select a voice."
 
-    mode = (
-        "timbre + prosody" if entry.has_transcript else "timbre only (no transcript)"
-    )
+    mode = "timbre + prosody" if entry.has_transcript else "timbre only (no transcript)"
     summary = (
         f"**{entry.spec}** — clones {mode}\n\n"
         f"Audio: `{entry.audio_path}`\n\n"
@@ -653,11 +649,7 @@ def _load_review(script: str | None, selected_model: str | None = None):
     keyed = {unit.unit_id: unit for unit in units}
     choices = [(unit.label, unit.unit_id) for unit in units]
     first = units[0] if units else None
-    detail = (
-        render_unit(first)
-        if first
-        else "_The model changed nothing and flagged nothing._"
-    )
+    detail = render_unit(first) if first else "_The model changed nothing and flagged nothing._"
 
     # Older artifacts predate the markdown companion file; write it on demand
     # so the download button always has a real file to point at.
@@ -753,9 +745,7 @@ def build_app() -> gr.Blocks:
             design_generate = gr.Button("Generate", variant="primary")
             design_audio = gr.Audio(label="Candidate", type="numpy")
             with gr.Row():
-                design_name = gr.Textbox(
-                    label="Save as", placeholder="warm_male_v3", scale=2
-                )
+                design_name = gr.Textbox(label="Save as", placeholder="warm_male_v3", scale=2)
                 design_save = gr.Button("Save voice", scale=1)
                 design_discard = gr.Button("Discard", scale=1)
             design_status = gr.Markdown()
@@ -839,9 +829,7 @@ def build_app() -> gr.Blocks:
                         label="Model",
                         interactive=True,
                     )
-                    timeout = gr.Number(
-                        label="Timeout (s)", value=DEFAULT_PROVIDER_TIMEOUT_SECONDS
-                    )
+                    timeout = gr.Number(label="Timeout (s)", value=DEFAULT_PROVIDER_TIMEOUT_SECONDS)
                 provider_note = gr.Markdown(_provider_note(_default_descriptor()))
                 with gr.Row():
                     prep_preview_chapters = gr.Number(
@@ -850,9 +838,7 @@ def build_app() -> gr.Blocks:
                     prep_preview_units = gr.Number(
                         label="First N units (0 = all)", value=0, precision=0
                     )
-                    force_preparation = gr.Checkbox(
-                        label="Ignore cached units", value=False
-                    )
+                    force_preparation = gr.Checkbox(label="Ignore cached units", value=False)
             prepare_button = gr.Button("Prepare", variant="primary")
             prepare_log = gr.Textbox(label="Log", lines=8, max_lines=20)
 
@@ -917,16 +903,12 @@ def build_app() -> gr.Blocks:
                     delete_open = gr.Button("🗑️ Delete", size="sm")
                     refresh_voices = gr.Button("⟳ Refresh", size="sm")
                 with gr.Row(visible=False) as rename_row:
-                    rename_input = gr.Textbox(
-                        placeholder="New name", container=False, scale=3
-                    )
+                    rename_input = gr.Textbox(placeholder="New name", container=False, scale=3)
                     rename_button = gr.Button("Save", variant="primary", scale=1)
                     rename_cancel = gr.Button("Cancel", scale=1)
                 with gr.Row(visible=False) as delete_row:
                     delete_warning = gr.Markdown(scale=3)
-                    delete_button = gr.Button(
-                        "Confirm delete", variant="stop", scale=1
-                    )
+                    delete_button = gr.Button("Confirm delete", variant="stop", scale=1)
                     delete_cancel = gr.Button("Cancel", scale=1)
             with gr.Row():
                 with gr.Column(scale=1):
@@ -1007,14 +989,11 @@ def build_app() -> gr.Blocks:
             inputs=[design_pending, design_name],
             outputs=[design_status, voice_picker, narrate_voice],
         )
-        design_discard.click(
-            _discard_design, outputs=[design_status, design_audio, design_pending]
-        )
+        design_discard.click(_discard_design, outputs=[design_status, design_audio, design_pending])
 
         process_button.click(
             _begin_work(2, None, "", "", None),
-            outputs=heavy_buttons
-            + [processed_audio, clone_transcript, clone_mode, clone_pending],
+            outputs=heavy_buttons + [processed_audio, clone_transcript, clone_mode, clone_pending],
             queue=False,
             show_progress="hidden",
         ).then(
@@ -1100,12 +1079,8 @@ def build_app() -> gr.Blocks:
             inputs=voice_picker,
             outputs=[delete_row, delete_warning, rename_row, voice_status],
         )
-        rename_cancel.click(
-            _cancel_edits, outputs=[rename_row, delete_row, voice_status]
-        )
-        delete_cancel.click(
-            _cancel_edits, outputs=[rename_row, delete_row, voice_status]
-        )
+        rename_cancel.click(_cancel_edits, outputs=[rename_row, delete_row, voice_status])
+        delete_cancel.click(_cancel_edits, outputs=[rename_row, delete_row, voice_status])
         rename_button.click(
             _rename_voice,
             inputs=[voice_picker, rename_input],
@@ -1117,9 +1092,7 @@ def build_app() -> gr.Blocks:
             outputs=[voice_status, voice_picker, narrate_voice, delete_row],
         )
         # Switching voices mid-edit would otherwise act on the wrong one.
-        voice_picker.change(
-            _cancel_edits, outputs=[rename_row, delete_row, voice_status]
-        )
+        voice_picker.change(_cancel_edits, outputs=[rename_row, delete_row, voice_status])
 
         prepare_button.click(
             _begin_work(

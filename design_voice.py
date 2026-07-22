@@ -33,9 +33,7 @@ from audiobook.synthesis.providers import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "name", help="Voice name; saved to voices/<name>/ (e.g. warm_male)."
-    )
+    parser.add_argument("name", help="Voice name; saved to voices/<name>/ (e.g. warm_male).")
     parser.add_argument(
         "--instruct",
         default=VOICE_DESIGN_INSTRUCT,
@@ -62,9 +60,7 @@ def main() -> None:
     descriptor = synthesis_descriptor(DEFAULT_SYNTHESIS_PROVIDER)
     if not descriptor.supports_design:
         raise SystemExit(f"The {descriptor.label} backend cannot design voices.")
-    provider = create_synthesis_provider(
-        DEFAULT_SYNTHESIS_PROVIDER, design_model=args.model
-    )
+    provider = create_synthesis_provider(DEFAULT_SYNTHESIS_PROVIDER, design_model=args.model)
     try:
         provider.check_available()
     except SynthesisUnavailableError as exc:

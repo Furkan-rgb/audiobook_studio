@@ -95,9 +95,7 @@ class MatchChunkLoudnessTests(unittest.TestCase):
         self.assertEqual(diagnostics[1].to_manifest()["normalization_gain_db"], 0.0)
 
     def test_quiet_and_loud_chunks_move_closer_together(self):
-        segments, _ = match_chunk_loudness(
-            [speech(0.1), speech(0.14), speech(0.2)], SAMPLE_RATE
-        )
+        segments, _ = match_chunk_loudness([speech(0.1), speech(0.14), speech(0.2)], SAMPLE_RATE)
 
         before = db_between(
             active_speech_rms(speech(0.2), SAMPLE_RATE),
@@ -125,9 +123,7 @@ class MatchChunkLoudnessTests(unittest.TestCase):
     def test_sample_peaks_stay_below_the_ceiling(self):
         spiky = speech(0.1)
         spiky[100] = 0.8  # A transient near full scale in a quiet chunk.
-        segments, diagnostics = match_chunk_loudness(
-            [spiky, speech(0.2), speech(0.2)], SAMPLE_RATE
-        )
+        segments, diagnostics = match_chunk_loudness([spiky, speech(0.2), speech(0.2)], SAMPLE_RATE)
 
         ceiling = 10.0 ** (-1.5 / 20.0)
         self.assertLessEqual(float(np.max(np.abs(segments[0]))), ceiling + 1e-6)
@@ -144,9 +140,7 @@ class MatchChunkLoudnessTests(unittest.TestCase):
             self.assertEqual(segment.dtype, np.float32)
 
     def test_natural_relative_differences_survive(self):
-        segments, _ = match_chunk_loudness(
-            [speech(0.05), speech(0.3)], SAMPLE_RATE
-        )
+        segments, _ = match_chunk_loudness([speech(0.05), speech(0.3)], SAMPLE_RATE)
 
         after = db_between(
             active_speech_rms(segments[1], SAMPLE_RATE),
@@ -209,9 +203,7 @@ class MergeChaptersLoudnormTests(unittest.TestCase):
         self.addCleanup(self._temp.cleanup)
 
     def merge(self, run_mock):
-        with mock.patch(
-            "audiobook.assembly.audio.subprocess.run", side_effect=run_mock
-        ) as patched:
+        with mock.patch("audiobook.assembly.audio.subprocess.run", side_effect=run_mock) as patched:
             merge_chapters(
                 self.temp_dir, ["part_000.wav", "part_001.wav"], CHAPTERS, self.output_path
             )
@@ -268,9 +260,7 @@ class MergeChaptersLoudnormTests(unittest.TestCase):
 
     def test_malformed_analysis_output_raises_a_clear_error(self):
         with self.assertRaisesRegex(RuntimeError, "loudnorm"):
-            self.merge(
-                lambda command, **kwargs: completed(command, stderr="no json here")
-            )
+            self.merge(lambda command, **kwargs: completed(command, stderr="no json here"))
 
     def test_unparseable_measurements_raise_a_clear_error(self):
         stderr = '{ "output_i" : "-22.03" }'
@@ -279,11 +269,7 @@ class MergeChaptersLoudnormTests(unittest.TestCase):
 
     def test_failed_analysis_command_raises_a_clear_error(self):
         with self.assertRaisesRegex(RuntimeError, "FFmpeg failed"):
-            self.merge(
-                lambda command, **kwargs: completed(
-                    command, returncode=1, stderr="boom"
-                )
-            )
+            self.merge(lambda command, **kwargs: completed(command, returncode=1, stderr="boom"))
 
     def test_failed_encode_command_raises_a_clear_error(self):
         responses = iter(

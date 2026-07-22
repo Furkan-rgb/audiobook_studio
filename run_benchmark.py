@@ -38,10 +38,10 @@ BASE_URL = "http://127.0.0.1:11434"
 TIMEOUT_SECONDS = 300.0
 
 # Optional narrowing — leave empty for the whole 48-case corpus.
-TIERS = ()          # e.g. ("trap", "robustness")
-CATEGORIES = ()     # e.g. ("bibliographic_citation",)
-CASE_IDS = ()       # e.g. ("core-001-citation-author-year-list",)
-QUICK = False       # True = three cases per tier, a fast smoke test
+TIERS = ()  # e.g. ("trap", "robustness")
+CATEGORIES = ()  # e.g. ("bibliographic_citation",)
+CASE_IDS = ()  # e.g. ("core-001-citation-author-year-list",)
+QUICK = False  # True = three cases per tier, a fast smoke test
 
 # Models the provider cannot run with thinking, to skip their thinking pass
 # instead of recording it as errors. Ollama reports this, so this is usually

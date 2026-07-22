@@ -1,7 +1,7 @@
 """Serve the local audiobook frontend.
 
-    python run_ui.py
-    python run_ui.py --port 7861 --share
+python run_ui.py
+python run_ui.py --port 7861 --share
 """
 
 import argparse
@@ -30,9 +30,7 @@ def main() -> None:
     results = run_preflight()
     print(format_report(results))
     if not passed(results) and not args.skip_preflight:
-        raise SystemExit(
-            "\nFix the failures above, or start anyway with --skip-preflight."
-        )
+        raise SystemExit("\nFix the failures above, or start anyway with --skip-preflight.")
 
     launch(server_name=args.host, server_port=args.port, share=args.share, inbrowser=True)
 

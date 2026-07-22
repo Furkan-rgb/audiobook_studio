@@ -164,9 +164,7 @@ def render_unit(unit: FlaggedUnit | None) -> str:
                 for value in (category, original, replacement, reason)
             ]
             anchor = str(sentence) if sentence else "—"
-            lines.append(
-                f"| {anchor} | {cells[0]} | {cells[1]} | {cells[2]} | {cells[3]} |"
-            )
+            lines.append(f"| {anchor} | {cells[0]} | {cells[1]} | {cells[2]} | {cells[3]} |")
     elif not unit.warnings:
         lines.append("_No edits recorded._")
     return "\n".join(lines)
@@ -175,7 +173,9 @@ def render_unit(unit: FlaggedUnit | None) -> str:
 def estimate_duration(book: PreparedBook) -> tuple[int, float]:
     """Word count and narrated minutes, so 'GPU-hours' becomes a number."""
 
-    words = sum(len(unit.prepared_text.split()) for chapter in book.chapters for unit in chapter.units)
+    words = sum(
+        len(unit.prepared_text.split()) for chapter in book.chapters for unit in chapter.units
+    )
     return words, words / WORDS_PER_MINUTE
 
 
@@ -192,7 +192,9 @@ def _source_line(book: PreparedBook) -> str:
         return "- Source: _not recorded_"
     path = Path(source.path)
     if not path.exists():
-        return f"- Source: `{path}` — **missing now**; cannot confirm it is the book this came from."
+        return (
+            f"- Source: `{path}` — **missing now**; cannot confirm it is the book this came from."
+        )
     if not source.sha256:
         return f"- Source: `{path}` (no hash recorded)"
     if _cached_digest(path) != source.sha256:
@@ -215,10 +217,7 @@ def _model_lines(book: PreparedBook, selected_model: str | None) -> list[str]:
     provider = book.provider_metadata
     # The policy is a paragraph of prose and belongs in the artifact, not in a
     # header line; the prompt version is what distinguishes two runs.
-    lines = [
-        f"- Prepared by **{provider.name} · {provider.model}** "
-        f"(prompt {book.prompt_version})"
-    ]
+    lines = [f"- Prepared by **{provider.name} · {provider.model}** (prompt {book.prompt_version})"]
     seen: dict[str, int] = {}
     for chapter in book.chapters:
         for unit in chapter.units:
@@ -226,7 +225,9 @@ def _model_lines(book: PreparedBook, selected_model: str | None) -> list[str]:
                 continue
             key = f"{unit.provider_metadata.name} · {unit.provider_metadata.model}"
             seen[key] = seen.get(key, 0) + 1
-    others = {key: count for key, count in seen.items() if key != f"{provider.name} · {provider.model}"}
+    others = {
+        key: count for key, count in seen.items() if key != f"{provider.name} · {provider.model}"
+    }
     if others:
         mixture = ", ".join(f"{count}× {key}" for key, count in sorted(others.items()))
         lines.append(

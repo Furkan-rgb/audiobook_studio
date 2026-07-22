@@ -110,10 +110,7 @@ def resolve_edit(
             "appears in more than one other sentence"
         )
     if not 0 <= index < len(spans):
-        return (
-            f"sentence {edit.sentence} does not exist (the passage has "
-            f"{len(spans)})"
-        )
+        return f"sentence {edit.sentence} does not exist (the passage has {len(spans)})"
     return "the original text is nowhere in the passage"
 
 

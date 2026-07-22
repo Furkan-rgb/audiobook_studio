@@ -88,12 +88,7 @@ VOICE_DESIGN_INSTRUCT = (
 # carries prosody from this audio, so match the book's register and give the
 # clone varied cadence: a declarative, a longer subordinate clause, a comma
 # list. Aim for ~15-20 seconds of plain narration with no dialogue.
-VOICE_REFERENCE_TEXT = (
-    "The distinction matters more than it first appears. What separates the two "
-    "cases is not scale, or cost, or even timing, but who is left to absorb the "
-    "consequences. Once that question is asked plainly, the earlier arguments "
-    "begin to look like descriptions of the same problem."
-)
+VOICE_REFERENCE_TEXT = "At first, the village seemed quiet, almost ordinary. Then a warm breeze moved through the open window, carrying the scent of rain and wood smoke from the hills. Clara paused, listened, and smiled. Whatever waited beyond the road, she would meet it with patience, curiosity, and a steady voice."
 # Narrator voices. ACTIVE_VOICE selects the reference the clone model conditions
 # on, and accepts either form:
 #   "warm_male_v2"     — a designed voice in voices/<name>/ (design_voice.py)
@@ -121,18 +116,22 @@ REFERENCE_MAX_INTERNAL_SILENCE_MS = 300
 # Transcribing a recording lets it clone prosody, not just timbre. The result is
 # written beside the audio as <stem>.txt so it can be corrected and reused.
 REFERENCE_TRANSCRIBE = True
-ASR_MODEL = "openai/whisper-large-v3-turbo"
+# Full large-v3 rather than -turbo: turbo's pruned decoder often drops
+# punctuation, and an unpunctuated transcript teaches the clone flat prosody.
+ASR_MODEL = "openai/whisper-large-v3"
 ASR_SAMPLE_RATE = 16000
 # Whisper invents fluent text on near-silent input. A transcript thinner than
 # this many words per second of audio is treated as a hallucination.
 ASR_MIN_WORDS_PER_SECOND = 0.5
 NARRATION_INSTRUCTION = (
-    "Professional audiobook narration. Calm, natural and measured. "
-    "Keep a steady reading pace of approximately 125 to 140 words per minute. "
-    "Do not slow down for names, dates or parenthetical citations. "
-    "Maintain flowing continuity between sentences. Use restrained emotion "
-    "and subtle dialogue differentiation. Avoid exaggerated pauses."
+    "Warm, engaging professional audiobook narration. Read naturally and clearly "
+    "at a relaxed pace, with expressive phrasing and emotion appropriate to the text. "
+    "Maintain smooth continuity, use natural pauses and vary tone gently to keep the "
+    "listening experience pleasant and immersive. Give dialogue subtle character "
+    "distinction without exaggerated acting. Avoid monotony, rushed delivery and "
+    "overly long pauses."
 )
+
 
 # Semantic narration chunks
 MIN_CHUNK_CHARS = 300

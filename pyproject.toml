@@ -33,3 +33,9 @@ where = ["src"]
 # The gold benchmark corpus is data the package loads at runtime, so a wheel
 # build has to carry it alongside the modules.
 "audiobook.benchmarking" = ["cases/*.json"]
+
+[dependency-groups]
+dev = ["ruff>=0.14", "pre-commit>=3.8"]
+
+[tool.ruff]
+line-length = 100

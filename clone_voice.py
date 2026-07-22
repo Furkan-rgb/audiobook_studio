@@ -83,18 +83,14 @@ def main() -> None:
     descriptor = synthesis_descriptor(DEFAULT_SYNTHESIS_PROVIDER)
     if not descriptor.supports_clone:
         raise SystemExit(f"The {descriptor.label} backend cannot clone voices.")
-    provider = create_synthesis_provider(
-        DEFAULT_SYNTHESIS_PROVIDER, clone_model=args.model
-    )
+    provider = create_synthesis_provider(DEFAULT_SYNTHESIS_PROVIDER, clone_model=args.model)
     try:
         provider.check_available()
     except SynthesisUnavailableError as exc:
         raise SystemExit(str(exc)) from exc
 
     try:
-        voice = resolve_voice(
-            args.voice, voices_dir=args.voices_dir, ref_text=args.ref_text
-        )
+        voice = resolve_voice(args.voice, voices_dir=args.voices_dir, ref_text=args.ref_text)
     except FileNotFoundError as exc:
         provider.close()
         raise SystemExit(str(exc)) from exc

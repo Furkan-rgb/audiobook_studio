@@ -262,9 +262,7 @@ def _matrix(report: BenchmarkReport, attribute: str, heading: str) -> list[str]:
     ]
     for item in report.ranked:
         cells = []
-        by_label = {
-            breakdown.label: breakdown for breakdown in getattr(item, attribute)
-        }
+        by_label = {breakdown.label: breakdown for breakdown in getattr(item, attribute)}
         for label in labels:
             breakdown = by_label.get(label)
             cells.append(
@@ -328,11 +326,7 @@ def _failure_appendix(report: BenchmarkReport, limit: int) -> list[str]:
         "`+` is what the model produced.",
     ]
     for item in report.ranked:
-        failures = [
-            run
-            for run in item.runs
-            if not run.score.passed and run.repetition == 1
-        ]
+        failures = [run for run in item.runs if not run.score.passed and run.repetition == 1]
         failures.sort(key=lambda run: (run.score.fidelity_pass, run.score.score))
         lines.extend(["", f"### `{item.model}`", ""])
         if not failures:
@@ -357,8 +351,7 @@ def _failure_appendix(report: BenchmarkReport, limit: int) -> list[str]:
                     lines.append(f"- Missed: `{outcome.anchor}` — {outcome.why}")
                 elif outcome.status == "approximate":
                     lines.append(
-                        f"- Wrong wording for `{outcome.anchor}`: produced "
-                        f"`{outcome.observed}`"
+                        f"- Wrong wording for `{outcome.anchor}`: produced `{outcome.observed}`"
                     )
             for change in score.unexpected:
                 label = f" (trap `{change.trap_label}`)" if change.trap_label else ""
@@ -388,9 +381,7 @@ def _failure_appendix(report: BenchmarkReport, limit: int) -> list[str]:
 
 
 def render_markdown(report: BenchmarkReport, *, appendix_limit: int = 8) -> str:
-    tiers = ", ".join(
-        f"{count} {label}" for label, count in sorted(report.corpus_tiers.items())
-    )
+    tiers = ", ".join(f"{count} {label}" for label, count in sorted(report.corpus_tiers.items()))
     seeds = ", ".join(str(seed) for seed in report.seeds) or "—"
     omitted = ", ".join(report.omitted_sampling) or "none"
     supplied = ", ".join(report.supplied_sampling) or "none"
@@ -469,8 +460,7 @@ def atomic_write(path: Path, content: str) -> None:
 def write_report(report: BenchmarkReport, *, appendix_limit: int = 8) -> None:
     atomic_write(
         report.json_path,
-        json.dumps(report.to_dict(), ensure_ascii=False, indent=2, allow_nan=False)
-        + "\n",
+        json.dumps(report.to_dict(), ensure_ascii=False, indent=2, allow_nan=False) + "\n",
     )
     atomic_write(
         report.markdown_path,

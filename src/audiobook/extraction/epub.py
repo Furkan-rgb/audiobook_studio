@@ -31,9 +31,7 @@ from .text import (
 
 CONTAINER_PATH = "META-INF/container.xml"
 NCX_MEDIA_TYPE = "application/x-dtbncx+xml"
-DOCUMENT_MEDIA_TYPES = frozenset(
-    {"application/xhtml+xml", "text/html", "application/x-dtbook+xml"}
-)
+DOCUMENT_MEDIA_TYPES = frozenset({"application/xhtml+xml", "text/html", "application/x-dtbook+xml"})
 
 # Public-domain conversions append a licence that is longer than some chapters
 # and belongs to no one's audiobook.  The marker line ends the book's text, so
@@ -278,9 +276,7 @@ def _parse_ncx(data: bytes, ncx_href: str) -> list[tuple[str, str]]:
     """Top-level EPUB 2 navPoints as (title, resolved href)."""
 
     root = _parse_xml(data)
-    nav_map = next(
-        (element for element in root.iter() if _local(element.tag) == "navMap"), None
-    )
+    nav_map = next((element for element in root.iter() if _local(element.tag) == "navMap"), None)
     if nav_map is None:
         return []
 
@@ -318,18 +314,14 @@ def _parse_nav_document(data: bytes, nav_href: str) -> list[tuple[str, str]]:
         (
             nav
             for nav in navs
-            if any(
-                key.endswith("type") and value == "toc" for key, value in nav.attrib.items()
-            )
+            if any(key.endswith("type") and value == "toc" for key, value in nav.attrib.items())
         ),
         navs[0] if navs else None,
     )
     if toc_nav is None:
         return []
 
-    ordered_list = next(
-        (child for child in toc_nav if _local(child.tag) == "ol"), None
-    )
+    ordered_list = next((child for child in toc_nav if _local(child.tag) == "ol"), None)
     if ordered_list is None:
         return []
 
@@ -337,9 +329,7 @@ def _parse_nav_document(data: bytes, nav_href: str) -> list[tuple[str, str]]:
     for item in ordered_list:
         if _local(item.tag) != "li":
             continue
-        link = next(
-            (element for element in item.iter() if _local(element.tag) == "a"), None
-        )
+        link = next((element for element in item.iter() if _local(element.tag) == "a"), None)
         if link is None:
             continue
         href = link.get("href")
@@ -450,9 +440,7 @@ def parse_epub_to_chapters(epub_path: Path) -> list[tuple[str, str]]:
 
     with zipfile.ZipFile(epub_path) as archive:
         package_path = _find_package_path(archive)
-        _title, manifest, spine, nav_href, ncx_href = _parse_package(
-            archive, package_path
-        )
+        _title, manifest, spine, nav_href, ncx_href = _parse_package(archive, package_path)
         documents = _extract_documents(archive, manifest, spine)
         if not documents:
             raise ValueError(f"EPUB contains no readable spine documents: {epub_path}")
@@ -476,11 +464,7 @@ def parse_epub_to_chapters(epub_path: Path) -> list[tuple[str, str]]:
 
     chapters: list[tuple[str, str]] = []
     for entry_index, (title, start) in enumerate(positions):
-        end = (
-            positions[entry_index + 1][1]
-            if entry_index + 1 < len(positions)
-            else None
-        )
+        end = positions[entry_index + 1][1] if entry_index + 1 < len(positions) else None
         if is_skipped_section(title):
             continue
         raw = RE_GUTENBERG_BOILERPLATE.sub("", _chapter_text(documents, start, end))

@@ -478,9 +478,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 raise SystemExit(1)
             return
         if args.command == "benchmark":
-            report = benchmark_preparation(
-                _benchmark_options(args), progress=benchmark_progress
-            )
+            report = benchmark_preparation(_benchmark_options(args), progress=benchmark_progress)
             print_summary(report)
             errored = sum(item.errored_cases for item in report.models_reports)
             if errored == len(report.runs):

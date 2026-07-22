@@ -106,8 +106,8 @@ class SemanticChunkingTests(unittest.TestCase):
 
     def test_dialogue_exchange_stays_together_when_it_fits(self):
         narration = "Narration " + "continues calmly " * 55
-        first_reply = '“Are you ready?” Daniel asked.'
-        second_reply = '“I think so,” Sarah replied.'
+        first_reply = "“Are you ready?” Daniel asked."
+        second_reply = "“I think so,” Sarah replied."
         chunks = audiobook.make_narration_chunks(
             f"{narration}\n\n{first_reply}\n\n{second_reply}",
             target_chars=700,

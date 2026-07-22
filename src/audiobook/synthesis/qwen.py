@@ -33,8 +33,7 @@ def verify_tts_dependencies() -> None:
         from qwen_tts import Qwen3TTSModel  # noqa: F401
     except ImportError as exc:
         raise RuntimeError(
-            "Qwen3-TTS is not installed. Run: .venv/bin/python -m pip "
-            "install -r requirements.txt"
+            "Qwen3-TTS is not installed. Run: .venv/bin/python -m pip install -r requirements.txt"
         ) from exc
 
     if not torch.cuda.is_available():
@@ -58,9 +57,7 @@ def load_qwen_model(model_name_or_path: str) -> Any:
 def verify_supported_voice(model: Any, voice_name: str = VOICE_NAME) -> None:
     """Raise when *model* does not expose the configured narrator voice."""
 
-    supported_speakers = {
-        str(speaker).casefold() for speaker in model.get_supported_speakers()
-    }
+    supported_speakers = {str(speaker).casefold() for speaker in model.get_supported_speakers()}
     if voice_name.casefold() not in supported_speakers:
         raise RuntimeError(f"{voice_name} is not supported by the selected model.")
 

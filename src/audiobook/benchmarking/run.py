@@ -222,9 +222,7 @@ def _attempt(
     try:
         result = provider.prepare(request)
         attempt.proposed = list(result.edits)
-        prepared, applied, refusals = apply_edits(
-            case.source, list(result.edits), policy=policy
-        )
+        prepared, applied, refusals = apply_edits(case.source, list(result.edits), policy=policy)
         attempt.applied = applied
         attempt.warnings = [*result.warnings, *refusals]
         validate_preparation(case.source, prepared, policy=policy)
@@ -304,12 +302,16 @@ def benchmark_preparation(
 ) -> BenchmarkReport:
     """Score every configured model against the gold corpus and write a report."""
 
-    selected = list(cases) if cases is not None else load_corpus(
-        options.corpus_dir,
-        tiers=options.tiers or None,
-        categories=options.categories or None,
-        ids=options.case_ids or None,
-        limit_per_tier=3 if options.quick else None,
+    selected = (
+        list(cases)
+        if cases is not None
+        else load_corpus(
+            options.corpus_dir,
+            tiers=options.tiers or None,
+            categories=options.categories or None,
+            ids=options.case_ids or None,
+            limit_per_tier=3 if options.quick else None,
+        )
     )
     if not selected:
         raise RuntimeError("No benchmark cases were available")
@@ -359,9 +361,7 @@ def benchmark_preparation(
                         attempt = _Attempt()
                         attempt.error = setup_error or "provider was not created"
                     else:
-                        attempt = _attempt(
-                            provider, case, options.validation_policy
-                        )
+                        attempt = _attempt(provider, case, options.validation_policy)
                     elapsed = perf_counter() - started
                     score = score_case(
                         case,
@@ -400,9 +400,7 @@ def benchmark_preparation(
     # The benchmark's one behaviour is native sampling, so unless a variant's
     # provider reports having sent sampling options, the run inherited them all.
     native_sampling = not any(
-        key in SAMPLING_OPTIONS
-        for parameters in variant_options.values()
-        for key in parameters
+        key in SAMPLING_OPTIONS for parameters in variant_options.values() for key in parameters
     )
 
     report = BenchmarkReport(

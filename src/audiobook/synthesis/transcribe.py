@@ -44,9 +44,7 @@ def transcribe(
     audio = np.asarray(audio, dtype=np.float32).reshape(-1)
     seconds = len(audio) / sample_rate
     if sample_rate != ASR_SAMPLE_RATE:
-        audio = librosa.resample(
-            y=audio, orig_sr=int(sample_rate), target_sr=ASR_SAMPLE_RATE
-        )
+        audio = librosa.resample(y=audio, orig_sr=int(sample_rate), target_sr=ASR_SAMPLE_RATE)
 
     print(f"Transcribing {seconds:.1f}s of reference audio with {model}...")
     recognizer = pipeline(

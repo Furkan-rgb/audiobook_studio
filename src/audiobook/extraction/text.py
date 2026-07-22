@@ -25,9 +25,7 @@ RE_CITATIONS_PAREN = re.compile(r"\(\s*\d+\s*\)")
 RE_CITATIONS_BRACKET = re.compile(r"\[\s*\d+\s*\]")
 RE_NUMBERED_CHAPTER = re.compile(r"^\s*\d+\s+\S")
 RE_PART_BOOKMARK = re.compile(r"^\s*[IVXLCDM]+\s+\S", re.IGNORECASE)
-RE_STANDALONE_PAGE_NUMBER = re.compile(
-    r"(?m)^[ \t]*#{0,6}[ \t]*(?:\d[ \t]*)+[ \t]*$"
-)
+RE_STANDALONE_PAGE_NUMBER = re.compile(r"(?m)^[ \t]*#{0,6}[ \t]*(?:\d[ \t]*)+[ \t]*$")
 RE_GUTENBERG_SECTION = re.compile(r"project gutenberg", re.IGNORECASE)
 
 # Section names that title apparatus rather than narration.  Reading a table of
@@ -80,10 +78,7 @@ def has_narratable_body(content: str) -> bool:
     entry points at a part divider — is a chapter with nothing to read.
     """
 
-    return any(
-        line.strip() and not line.lstrip().startswith("#")
-        for line in content.splitlines()
-    )
+    return any(line.strip() and not line.lstrip().startswith("#") for line in content.splitlines())
 
 
 def clean_text_segment(text: str) -> str:
